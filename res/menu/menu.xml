@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <group android:id="@+id/group1" >
+        <item
+            android:id="@+id/itemAdd"
+            android:enabled="true"
+            android:icon="@android:drawable/ic_menu_add"
+            android:title="追加">
+            <menu>
+                <item
+                    android:id="@+id/mAdvance"
+                    android:title="前進"/>
+                <item
+                    android:id="@+id/mBack"
+                    android:enabled="true"
+                    android:title="後退"/>
+                <item
+                    android:id="@+id/mWait"
+                    android:enabled="true"
+                    android:title="実行 or 待機 時間"/>
+                <item
+                    android:id="@+id/mIf"
+                    android:enabled="true"
+                    android:title="もし○○ならば"/>
+            </menu>
+        </item>
+        <item
+            android:id="@+id/itemRun"
+            android:enabled="true"
+            android:icon="@android:drawable/ic_media_play"
+            android:title="実行"/>
+        <item
+            android:id="@+id/itemSave"
+            android:enabled="true"
+            android:icon="@android:drawable/ic_menu_save"
+            android:title="保存"/>
+    </group>
+
+</menu>

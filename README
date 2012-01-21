@@ -1,0 +1,11 @@
+githubの使い方
+
+git add ファイル名
+//git commit -m 'commit説明文'
+//git remote add origin git@github.com:minea/MoterTest.git
+git commit -a -m 'commit説明文'
+git push -u origin master
+
+Tag付の仕方
+git tag -a v1.0
+git push --tags
