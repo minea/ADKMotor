@@ -30,7 +30,7 @@ import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 
 public class MainActivity extends Activity implements Runnable {
-	private static final String TAG = "ADKMotorICS";
+	private static final String TAG = "ADKMotor";
 	private static final String ACTION_USB_PERMISSION = "com.minea.android.app.adkmotorics.action.USB_PERMISSION";
 
 	private PendingIntent mPermissionIntent;
@@ -153,7 +153,6 @@ public class MainActivity extends Activity implements Runnable {
 		filter.addAction(ACTION_USB_PERMISSION);
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
-		requestWindowFeature(Window.FEATURE_NO_TITLE); // 全画面表示
 
 		/*
 		setContentView(R.layout.main);
@@ -344,6 +343,14 @@ public class MainActivity extends Activity implements Runnable {
 			idCounter++;
 			layout.addView(metW);
 			break;
+		case R.id.mIf:
+			/* メニューからの実行 */
+			timer_task.setRoot(root_command);
+			timer_task.setIO(mInputStream, mOutputStream);
+			timer_task.run();
+			// ti.schedule(timer_task,1000,5000);
+			clearCommands();
+			break;
 		case R.id.itemRun:
 			/* メニューからの実行 */
 			timer_task.setRoot(root_command);
@@ -352,6 +359,7 @@ public class MainActivity extends Activity implements Runnable {
 			// ti.schedule(timer_task,1000,5000);
 			clearCommands();
 			break;
+			
 		default:
 			Log.d(TAG,"Meny not select.");
 		return true;
