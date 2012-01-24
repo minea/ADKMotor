@@ -16,6 +16,18 @@
                     android:enabled="true"
                     android:title="後退"/>
                 <item
+                    android:id="@+id/mRRotate"
+                    android:enabled="true"
+                    android:title="右回転"/>
+                <item
+                    android:id="@+id/mLRotate"
+                    android:enabled="true"
+                    android:title="左回転"/>
+                <item
+                    android:id="@+id/mStop"
+                    android:enabled="true"
+                    android:title="停止"/>
+                <item
                     android:id="@+id/mWait"
                     android:enabled="true"
                     android:title="実行 or 待機 時間"/>

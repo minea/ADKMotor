@@ -18,6 +18,8 @@ import android.view.View;
  */
 public class MultiTextView extends View {
 
+	CommandClass commandHm;
+	
 	// 部品の幅
 	private int width = 55;
 
@@ -34,10 +36,28 @@ public class MultiTextView extends View {
 	 */
 	public MultiTextView(Context context) {
 		super(context);
+		commandHm = new CommandClass();
 	}
 	
 	public void setText(String s){
 		mainText = s;
+		
+		if (s.equals("前進")){
+			commandHm.setAttribute("TYPE", "SEND");
+			commandHm.setAttribute("MASSAGE","ADVANCE");
+		} else if (s.equals("後退")){
+			commandHm.setAttribute("TYPE","SEND");
+			commandHm.setAttribute("MASSAGE","BACK");
+		} else if (s.equals("右回転")){
+			commandHm.setAttribute("TYPE","SEND");
+			commandHm.setAttribute("MASSAGE","RROTATE");
+		} else if (s.equals("左回転")){
+			commandHm.setAttribute("TYPE","SEND");
+			commandHm.setAttribute("MASSAGE","LROTATE");
+		} else if (s.equals("停止")){
+			commandHm.setAttribute("TYPE","SEND");
+			commandHm.setAttribute("MASSAGE","STOP");
+		}
 	}
 
 	@Override
@@ -45,10 +65,8 @@ public class MultiTextView extends View {
 		// 背景の描画
 		Paint bgPaint = new Paint();
 		bgPaint.setColor(Color.DKGRAY);
-		canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(), bgPaint);
-		Log.d("onDraw","getBottom = "+getBottom());
-		Log.d("onDraw","getTop = "+getTop());
-		
+		//canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(), bgPaint);
+		canvas.drawRect(0, 0, 100, 50, bgPaint);
 		// メインテキスト用ペイント
 		Paint mainTextPaint = new Paint();
 		mainTextPaint.setColor(Color.WHITE);

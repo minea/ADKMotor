@@ -9,7 +9,7 @@ public class CommandClass {
 
 	// コンストラクタ
 	public CommandClass(){
-		
+		commandHm = new HashMap<String,String>();
 	}
 	
 	public void setAttribute(String name, String attri){
@@ -17,7 +17,23 @@ public class CommandClass {
 		commandHm.put(name,attri);
 	}
 	
-	public HashMap<String,String> getAttribute(){
+	public void setPrimaryConnection(CommandClass c){
+		primaryConnection = c;
+	}
+	
+	public CommandClass getPrimaryConnection(){
+		return primaryConnection;
+	}
+	
+	public void setsecondaryConnection(CommandClass c){
+		secondaryConnection = c;
+	}
+	
+	public CommandClass getsecondaryConnection(){
+		return secondaryConnection;
+	}
+	
+	public HashMap<String, String> getAttribute(){
 		return commandHm;
 	}
 }

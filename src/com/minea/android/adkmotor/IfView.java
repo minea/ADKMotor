@@ -16,15 +16,20 @@ import android.text.SpannableStringBuilder;
 
 public class IfView extends LinearLayout {
 	EditText ed0, ed1;
+	CommandClass commandHm;
 	SpannableStringBuilder sb; // getText用
 	String item; // Spinner のテキスト取得用
 
 	public IfView(Context context) {
 		super(context);
+		commandHm = new CommandClass();
 		init(context);
 	}
 
 	public void init(Context context) {
+		
+		commandHm.setAttribute("TYPE", "IF");
+				
 		setOrientation(HORIZONTAL);
 		ed0 = new EditText(context);
 		ed0.setTextColor(Color.WHITE);
@@ -35,7 +40,7 @@ public class IfView extends LinearLayout {
 		TextView tx0 = new TextView(context);
 		tx0.setTextColor(Color.WHITE);
 		tx0.setBackgroundColor(Color.DKGRAY);
-		tx0.setWidth(100);
+		tx0.setWidth(15);
 		tx0.setText("が");
 		addView(tx0);
 		
@@ -47,6 +52,7 @@ public class IfView extends LinearLayout {
 
 		// spinner の作成
 		Spinner spinner = new Spinner(context);
+		
 		// List の作成
 		ArrayList<String> list = new ArrayList<String>();
 		list.add("等しい");
@@ -70,11 +76,18 @@ public class IfView extends LinearLayout {
 				Spinner spinner = (Spinner) parent;
 				// 選択されたアイテムを取得します
 				item = (String) spinner.getSelectedItem();
+				commandHm.setAttribute("CONDITION", item);
 			}
 
 			@Override
 			public void onNothingSelected(AdapterView<?> arg0) {
 			}});
+		/*
+		commandHm.setAttribute("LFETVALUE",ed0.getText().toString());
+		Log.d("LEFTVALUE",ed0.getText().toString());
+		commandHm.setAttribute("RIGHTVALUE",ed1.getText().toString());
+		Log.d("RIGHTVALUE",ed1.getText().toString());*/
+		
 	}
 
 	public String getText(int i) {

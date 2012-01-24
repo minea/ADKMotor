@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Collection;
@@ -52,6 +53,7 @@ public class MainActivity extends Activity implements Runnable {
 	
 	LinearLayout layout;
 	int idCounter = 0x700; // ID Counter
+	LinkedList<MultiTextView> list = new LinkedList<MultiTextView>();
 
 	public MainActivity() {
 		commands = new HashMap<Integer, Command>();
@@ -311,9 +313,11 @@ public class MainActivity extends Activity implements Runnable {
 		// メソッド変数
 		SEND send_command = new SEND();
 		
+		
 		super.onOptionsItemSelected(item);
 		switch (item.getItemId()) {
 		case R.id.mAdvance:
+			//MultiTextView mtvA + 1.toString() = new MultiTextView(this);
 			MultiTextView mtvA = new MultiTextView(this);
 			mtvA.setText("前進");
 			mtvA.setId(idCounter);
@@ -327,15 +331,26 @@ public class MainActivity extends Activity implements Runnable {
 			break;
 		case R.id.mBack:
 			MultiTextView mtvB = new MultiTextView(this);
+			//mtvB = new MultiTextView(this);
 			mtvB.setText("後退");
 			mtvB.setId(idCounter);
+			list.add(mtvB);
+			Log.d("list get 0 ","list Size " + list.size());
 			idCounter++;
 			layout.addView(mtvB);
+			
 			// コマンドの動作をセット
 			send_command.setOperation("Back");
 			setCommand(++current_head, send_command);
 			setConnection(current_head - 1,
 					Command.ConnectionTarget.NEXT, current_head);
+			break;
+		case R.id.mRRotate:
+			ArrowLine arrow = new ArrowLine(this);
+			arrow.setId(idCounter);
+			idCounter++;
+			layout.addView(arrow);
+			
 			break;
 		case R.id.mWait:
 			MultiEditText metW = new MultiEditText(this);
@@ -359,7 +374,9 @@ public class MainActivity extends Activity implements Runnable {
 			// ti.schedule(timer_task,1000,5000);
 			clearCommands();
 			break;
-			
+		case R.id.itemSave:
+			Log.d("list get 0 ","list getId "+list.get(1).getId());
+			break;
 		default:
 			Log.d(TAG,"Meny not select.");
 		return true;
