@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Collection;
@@ -23,10 +22,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.Window;
-
 import android.widget.LinearLayout;
-
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 
@@ -50,10 +46,15 @@ public class MainActivity extends Activity implements Runnable {
 	HashMap<Integer, Command> commands;
 	int current_head;
 	Command root_command;
-	
+
 	LinearLayout layout;
 	int idCounter = 0x700; // ID Counter
-	LinkedList<MultiTextView> list = new LinkedList<MultiTextView>();
+
+	int rootId;
+	int widgetId;
+	HashMap<Integer, IfLabel> ifLabels;
+	HashMap<Integer, MultiEditLabel> multiEditLabels;
+	HashMap<Integer, MultiTextLabel> multiTextLabels;
 
 	public MainActivity() {
 		commands = new HashMap<Integer, Command>();
@@ -61,6 +62,11 @@ public class MainActivity extends Activity implements Runnable {
 		commands.put(new Integer(0), root_command);
 		current_head = 0;
 		ti = new Timer();
+		widgetId = 0;
+		rootId = 0;
+		ifLabels = new HashMap<Integer, IfLabel>();
+		multiEditLabels = new HashMap<Integer, MultiEditLabel>();
+		multiTextLabels = new HashMap<Integer, MultiTextLabel>();
 	}
 
 	// コマンド追加(idは自動的に追加)
@@ -156,14 +162,16 @@ public class MainActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
-		/*
-		setContentView(R.layout.main);
-		setupUi();
-		enableControls(false); */
 		/* レイアウトを作成する */
 		layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        setContentView(layout);
+		layout.setOrientation(LinearLayout.VERTICAL);
+		setContentView(layout);
+		/* root widgetの作成 */
+		MultiTextLabel rootLabel = new MultiTextLabel(this);
+		rootLabel.setText("スタート");
+		layout.addView(rootLabel);
+		multiTextLabels.put(widgetId, rootLabel);
+		widgetId++;
 	}
 
 	@Override
@@ -300,90 +308,81 @@ public class MainActivity extends Activity implements Runnable {
 			}
 		}
 	}
-	
+
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.menu, menu);
 		return true;
 	}
 
+	void buildLowLevelCommands() {
+		
+	}
 	/* ボタンを押した時の動作 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// メソッド変数
 		SEND send_command = new SEND();
-		
-		
+		ArrowLine arrow = new ArrowLine(this);
+
 		super.onOptionsItemSelected(item);
+
 		switch (item.getItemId()) {
 		case R.id.mAdvance:
-			//MultiTextView mtvA + 1.toString() = new MultiTextView(this);
-			MultiTextView mtvA = new MultiTextView(this);
+			layout.addView(arrow);
+			widgetId++;
+			MultiTextLabel mtvA = new MultiTextLabel(this);
 			mtvA.setText("前進");
-			mtvA.setId(idCounter);
-			idCounter++;
+			searchingPrimary(widgetId, mtvA);
+
 			layout.addView(mtvA);
-			// コマンドをセット
-			send_command.setOperation("Advance");
-			setCommand(++current_head, send_command);
-			setConnection(current_head - 1,
-					Command.ConnectionTarget.NEXT, current_head);
+			multiTextLabels.put(widgetId, mtvA);
+
 			break;
 		case R.id.mBack:
-			MultiTextView mtvB = new MultiTextView(this);
-			//mtvB = new MultiTextView(this);
+			layout.addView(arrow);
+			widgetId++;
+			MultiTextLabel mtvB = new MultiTextLabel(this);
 			mtvB.setText("後退");
-			mtvB.setId(idCounter);
-			list.add(mtvB);
-			Log.d("list get 0 ","list Size " + list.size());
-			idCounter++;
+			searchingPrimary(widgetId, mtvB);
+
+			// layout.addView(arrow);
 			layout.addView(mtvB);
-			
-			// コマンドの動作をセット
-			send_command.setOperation("Back");
-			setCommand(++current_head, send_command);
-			setConnection(current_head - 1,
-					Command.ConnectionTarget.NEXT, current_head);
+			multiTextLabels.put(widgetId, mtvB);
 			break;
 		case R.id.mRRotate:
-			ArrowLine arrow = new ArrowLine(this);
-			arrow.setId(idCounter);
-			idCounter++;
-			layout.addView(arrow);
-			
+
 			break;
 		case R.id.mWait:
-			MultiEditText metW = new MultiEditText(this);
-			metW.setId(idCounter);
-			idCounter++;
+			layout.addView(arrow);
+			widgetId++;
+			MultiEditLabel metW = new MultiEditLabel(this);
+			searchingPrimary(widgetId, metW);
 			layout.addView(metW);
+			multiEditLabels.put(widgetId, metW);
 			break;
 		case R.id.mIf:
-			/* メニューからの実行 */
-			timer_task.setRoot(root_command);
-			timer_task.setIO(mInputStream, mOutputStream);
-			timer_task.run();
-			// ti.schedule(timer_task,1000,5000);
-			clearCommands();
+			layout.addView(arrow);
+			widgetId++;
+			IfLabel ifl = new IfLabel(this);
+			searchingPrimary(widgetId, ifl);
+			layout.addView(ifl);
+			ifLabels.put(widgetId, ifl);
 			break;
 		case R.id.itemRun:
-			/* メニューからの実行 */
-			timer_task.setRoot(root_command);
-			timer_task.setIO(mInputStream, mOutputStream);
-			timer_task.run();
-			// ti.schedule(timer_task,1000,5000);
-			clearCommands();
+			buildLowLevelCommands();
 			break;
 		case R.id.itemSave:
-			Log.d("list get 0 ","list getId "+list.get(1).getId());
+			// CommandClass cc = new CommandClass();
+			// cc = list.get(0).commandHm.getAttribute();
 			break;
 		default:
-			Log.d(TAG,"Meny not select.");
-		return true;
+			Log.d(TAG, "Meny not select.");
+			return true;
 		}
 		return false;
 	}
-	
+
 	private class ThreadTimer extends TimerTask {
 		FileInputStream mInputStream;
 		FileOutputStream mOutputStream;
@@ -426,6 +425,51 @@ public class MainActivity extends Activity implements Runnable {
 				}
 			} while (!current_command.isEnd());
 			current_command.run(mInputStream, mOutputStream, variables);
+		}
+	}
+	
+	public void searchingPrimary(int id, IfLabel label){
+		for (int i = id - 1; i >= 0; i--) {
+			if (null != multiTextLabels.get(i)) {
+				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != multiEditLabels.get(i)) {
+				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != ifLabels.get(i)) {
+				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			}
+		}
+	}
+	
+	public void searchingPrimary(int id, MultiEditLabel label){
+		for (int i = id - 1; i >= 0; i--) {
+			if (null != multiTextLabels.get(i)) {
+				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != multiEditLabels.get(i)) {
+				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != ifLabels.get(i)) {
+				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			}
+		}
+	}
+	
+	public void searchingPrimary(int id, MultiTextLabel label){
+		for (int i = id - 1; i >= 0; i--) {
+			if (null != multiTextLabels.get(i)) {
+				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != multiEditLabels.get(i)) {
+				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			} else if (null != ifLabels.get(i)) {
+				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
+				break;
+			}
 		}
 	}
 }
