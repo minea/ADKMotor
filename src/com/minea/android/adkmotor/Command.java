@@ -58,6 +58,48 @@ class NOP implements Command {
 	}
 }
 
+
+//�������Ȃ��R�}���h
+class WAIT implements Command {
+	Command command;
+	int millis = 0;
+
+	// ���̃R�}���h��ݒ肷��
+	@Override
+	public void setNext(ConnectionTarget target, Command c) {
+		Log.d("Command", "NOP.setNext");
+		if (target == ConnectionTarget.NEXT)
+			command = c;
+	}
+
+	public void removeConnection(Command c) {
+		if (command == c)
+			command = new END();
+	}
+
+	public void setTime(int times){
+		millis = times;
+	}
+	
+	// �R�}���h�����s����
+	@Override
+	public Command run(FileInputStream istream, FileOutputStream ostream,
+			HashMap<String, Integer> hm) {
+		Log.d("Command", "WAIT.run");
+		try {
+			Thread.sleep(millis);
+		} catch (InterruptedException e) {
+		}
+		return command;
+	}
+
+	@Override
+	public boolean isEnd() {
+		Log.d("Command", "WAIT.isEnd");
+		return false;
+	}
+}
+
 // END�R�}���h�͉������Ȃ� ���̃R�}���h���Ă΂Ȃ�=���̃R�}���h���Ō�ɏ������I������
 class END implements Command {
 	@Override
@@ -70,8 +112,8 @@ class END implements Command {
 
 	void sendCommand(FileOutputStream ostream, byte bin_command, byte value) {
 		byte[] buffer = new byte[2];
-		if (value != 0x0 && value != 0x1 && value != 0x2)
-			value = 0x0;
+		//if (value != 0x0 && value != 0x1 && value != 0x2)
+		//	value = 0x0;
 		// 2byte �̃I���I���v���g�R��
 		// 0x1 0x0 �� 0x1 0x1
 		buffer[0] = bin_command;
@@ -160,12 +202,24 @@ class SEND implements Command {
 		Log.d("Command", "SEND.run");
 		// ������Arduino�֖��߂𑗂�R�[�h��ǉ�����
 		byte bin_command = (byte) 0x1;
-		if (arduino_command.equals("Advance")) {
+		if (arduino_command.equals("ADVANCE")) {
 			byte value = (byte) ADVANCE_COMMAND;
 			sendCommand(ostream, bin_command, value);
-		} else if (arduino_command.equals("Back")) {
+		} else if (arduino_command.equals("BACK")) {
 			Log.e("SEND", "HAS Back");
 			byte value = (byte) BACK_COMMAND;
+			sendCommand(ostream, bin_command, value);
+		} else if (arduino_command.equals("RROTATE")) {
+			Log.e("SEND", "HAS Back");
+			byte value = (byte) BACK_COMMAND;
+			sendCommand(ostream, bin_command, value);
+		} else if (arduino_command.equals("LROTATE")) {
+			Log.e("SEND", "HAS Back");
+			byte value = (byte) BACK_COMMAND;
+			sendCommand(ostream, bin_command, value);
+		} else if (arduino_command.equals("STOP")) {
+			Log.d("SEND", "STOP");
+			byte value = (byte) 0x0;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("End")) {
 			Log.d("SEND", "CANCEL");

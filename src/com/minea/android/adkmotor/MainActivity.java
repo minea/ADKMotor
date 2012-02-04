@@ -10,19 +10,32 @@ import java.util.TimerTask;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.minea.android.adkmotor.IF.CompOperation;
+
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
+import android.util.Pair;
+import android.view.DragEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.widget.LinearLayout;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.RelativeLayout;
+import android.widget.RelativeLayout.LayoutParams;
+import android.graphics.Color;
 import android.hardware.usb.UsbAccessory;
 import android.hardware.usb.UsbManager;
 
@@ -43,18 +56,24 @@ public class MainActivity extends Activity implements Runnable {
 
 	Timer ti;
 	ThreadTimer timer_task;
-	HashMap<Integer, Command> commands;
 	int current_head;
 	Command root_command;
 
-	LinearLayout layout;
+	RelativeLayout layout;
 	int idCounter = 0x700; // ID Counter
 
 	int rootId;
-	int widgetId;
-	HashMap<Integer, IfLabel> ifLabels;
-	HashMap<Integer, MultiEditLabel> multiEditLabels;
-	HashMap<Integer, MultiTextLabel> multiTextLabels;
+	int widgetId; // widget に割り振るID
+	int arrowId;
+	HashMap<Integer, Command> commands;
+	HashMap<Integer, CommandClass> commandArray; // Widget の一覧保持
+	static SQLiteDatabase mydb; // 矢印の情報保持用
+
+	int paramsHeigh = 90; // 命令ラベルと命令ラベルの間
+	private final int WC = ViewGroup.LayoutParams.WRAP_CONTENT; // Layout用のパラメータ
+
+	private final String CREATE_TABLE_SQL = "CREATE TABLE CommandConnection ( ArrowID INTEGER, "
+			+ "FromWidgetID INTEGER, " + "ToWidgetID INTEGER);";
 
 	public MainActivity() {
 		commands = new HashMap<Integer, Command>();
@@ -64,9 +83,9 @@ public class MainActivity extends Activity implements Runnable {
 		ti = new Timer();
 		widgetId = 0;
 		rootId = 0;
-		ifLabels = new HashMap<Integer, IfLabel>();
-		multiEditLabels = new HashMap<Integer, MultiEditLabel>();
-		multiTextLabels = new HashMap<Integer, MultiTextLabel>();
+		arrowId = 0;
+		timer_task = new ThreadTimer();
+		commandArray = new HashMap<Integer, CommandClass>();
 	}
 
 	// コマンド追加(idは自動的に追加)
@@ -162,15 +181,22 @@ public class MainActivity extends Activity implements Runnable {
 		filter.addAction(UsbManager.ACTION_USB_ACCESSORY_DETACHED);
 		registerReceiver(mUsbReceiver, filter);
 
+		// 矢印の遷移先を管理するSQLite作成
+		MySQLiteOpenHelper hlpr = new MySQLiteOpenHelper(
+				getApplicationContext(), CREATE_TABLE_SQL);
+		mydb = hlpr.getWritableDatabase();
+		Cursor cursor = mydb.query("CommandConnection", new String[] {
+				"ArrowID", "FromWidgetID", "ToWidgetID" }, null, null, null,
+				null, null);
+
 		/* レイアウトを作成する */
-		layout = new LinearLayout(this);
-		layout.setOrientation(LinearLayout.VERTICAL);
+		layout = new RelativeLayout(this);
 		setContentView(layout);
+		layout.setBackgroundColor(Color.WHITE);
 		/* root widgetの作成 */
 		MultiTextLabel rootLabel = new MultiTextLabel(this);
 		rootLabel.setText("スタート");
 		layout.addView(rootLabel);
-		multiTextLabels.put(widgetId, rootLabel);
 		widgetId++;
 	}
 
@@ -235,7 +261,6 @@ public class MainActivity extends Activity implements Runnable {
 			mInputStream = new FileInputStream(fd);
 			mOutputStream = new FileOutputStream(fd);
 
-			timer_task = new ThreadTimer();
 			// この中でアクセサリとやりとりする
 			Thread thread = new Thread(null, this, "DemoKit");
 			thread.start();
@@ -316,61 +341,202 @@ public class MainActivity extends Activity implements Runnable {
 	}
 
 	void buildLowLevelCommands() {
-		
+
 	}
+
 	/* ボタンを押した時の動作 */
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		// メソッド変数
-		SEND send_command = new SEND();
-		ArrowLine arrow = new ArrowLine(this);
-
 		super.onOptionsItemSelected(item);
 
 		switch (item.getItemId()) {
 		case R.id.mAdvance:
-			layout.addView(arrow);
+			/* Widget の処理 */
 			widgetId++;
-			MultiTextLabel mtvA = new MultiTextLabel(this);
+			final String itemS = "";
+			final ClipData.Item clipItem;
+			final MultiTextLabel mtvA = new MultiTextLabel(this);
 			mtvA.setText("前進");
-			searchingPrimary(widgetId, mtvA);
+			mtvA.setId(widgetId);
 
-			layout.addView(mtvA);
-			multiTextLabels.put(widgetId, mtvA);
+			commandArray.put(widgetId, mtvA);
+			// commandConnection.put(widgetId, Pair.create(3, -1));
 
+			/*
+			 * コマンドの処理 send_command = new SEND();
+			 * send_command.setOperation("Advance"); setCommand(++current_head,
+			 * send_command); setConnection(current_head - 1,
+			 * Command.ConnectionTarget.NEXT, current_head);
+			 */
+			/* レイアウトに配置 */
+			layout.addView(mtvA, createParam(paramsHeigh));
+			paramsHeigh += 90;
+
+			final ArrowDraw arrow = new ArrowDraw(this);
+			/* ドラッグアンドドロップ処理 */
+			mtvA.setOnDragListener(new View.OnDragListener() {
+				public boolean onDrag(View v, DragEvent event) {
+					final int action = event.getAction();
+					boolean result = false;
+					switch (action) {
+					case DragEvent.ACTION_DRAG_STARTED: {
+					}
+						break;
+					case DragEvent.ACTION_DRAG_ENDED: {
+						Log.i("DragSample", "Drag ended.");
+					}
+						break;
+					case DragEvent.ACTION_DRAG_LOCATION: {
+						result = true;
+					}
+						break;
+					case DragEvent.ACTION_DROP: {
+						// ドロップ時にボタンの色を赤色に変化
+						Log.i("DragSample", "Drop!!");
+						arrow.setId(arrowId);
+						arrowId++;
+
+						// システムのクリップボードを取得
+						ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
+						// クリップボードからClipDataを取得
+						ClipData cd = cm.getPrimaryClip();
+						// クリップデータからItemを取得
+						ClipData.Item clipItem = cd.getItemAt(0);
+						String itemString = clipItem.getText().toString();
+
+						/* 矢印のfrom,to情報をSQLiteに書き込み */
+						layout.addView(arrow, createParam(paramsHeigh - 150));
+						ContentValues values = new ContentValues();
+						values.put("ArrowID", arrow.getId());
+						values.put("ToWidgetID", mtvA.getId());
+						values.put("FromWidgetID", Integer.parseInt(itemString));
+						Log.d("FromWidgetID", itemString);
+						mydb.insert("CommandConnection", null, values);
+
+						result = true;
+
+						break;
+					}
+					}
+					return result;
+				}
+			});
 			break;
 		case R.id.mBack:
-			layout.addView(arrow);
 			widgetId++;
-			MultiTextLabel mtvB = new MultiTextLabel(this);
+			final MultiTextLabel mtvB = new MultiTextLabel(this);
 			mtvB.setText("後退");
-			searchingPrimary(widgetId, mtvB);
+			mtvB.setId(widgetId);
+			commandArray.put(widgetId, mtvB);
+			/*
+			 * send_command = new SEND(); send_command.setOperation("Back");
+			 * setCommand(++current_head, send_command);
+			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
+			 * current_head); layout.addView(arrow);
+			 */
+			layout.addView(mtvB, createParam(paramsHeigh));
+			paramsHeigh += 90;
 
-			// layout.addView(arrow);
-			layout.addView(mtvB);
-			multiTextLabels.put(widgetId, mtvB);
+			final ArrowDraw arrowB = new ArrowDraw(this);
+			/* ドラッグアンドドロップ処理 */
+			mtvB.setOnDragListener(new View.OnDragListener() {
+				public boolean onDrag(View v, DragEvent event) {
+					final int action = event.getAction();
+					boolean result = false;
+					switch (action) {
+					case DragEvent.ACTION_DRAG_STARTED: {
+					}
+						break;
+					case DragEvent.ACTION_DRAG_ENDED: {
+						Log.i("DragSample", "Drag ended.");
+					}
+						break;
+					case DragEvent.ACTION_DRAG_LOCATION: {
+						result = true;
+					}
+						break;
+					case DragEvent.ACTION_DROP: {
+						// ドロップ時にボタンの色を赤色に変化
+						Log.i("DragSample", "Drop!!");
+						arrowB.setId(arrowId);
+						arrowId++;
+
+						/* 矢印のfrom,to情報をSQLiteに書き込み */
+						layout.addView(arrowB, createParam(paramsHeigh - 150));
+						ContentValues values = new ContentValues();
+						values.put("ArrowID", arrowB.getId());
+						values.put("ToWidgetID", mtvB.getId());
+						mydb.insert("CommandConnection", null, values);
+
+						result = true;
+
+						break;
+					}
+					}
+					return result;
+				}
+			});
 			break;
 		case R.id.mRRotate:
+			widgetId++;
+			MultiTextLabel mtvRR = new MultiTextLabel(this);
+			mtvRR.setText("右回転");
+			mtvRR.setId(widgetId);
+			commandArray.put(widgetId, mtvRR);
 
+			layout.addView(mtvRR, createParam(paramsHeigh));
+			paramsHeigh += 90;
+			break;
+		case R.id.mLRotate:
+			widgetId++;
+			MultiTextLabel mtvLR = new MultiTextLabel(this);
+			mtvLR.setText("左回転");
+			mtvLR.setId(widgetId);
+			commandArray.put(widgetId, mtvLR);
+			layout.addView(mtvLR, createParam(paramsHeigh));
+			paramsHeigh += 90;
 			break;
 		case R.id.mWait:
-			layout.addView(arrow);
 			widgetId++;
 			MultiEditLabel metW = new MultiEditLabel(this);
-			searchingPrimary(widgetId, metW);
-			layout.addView(metW);
-			multiEditLabels.put(widgetId, metW);
+			metW.setId(widgetId);
+			commandArray.put(widgetId, metW);
+			layout.addView(metW, createParam(paramsHeigh));
+			paramsHeigh += 90;
 			break;
 		case R.id.mIf:
-			layout.addView(arrow);
 			widgetId++;
 			IfLabel ifl = new IfLabel(this);
-			searchingPrimary(widgetId, ifl);
-			layout.addView(ifl);
-			ifLabels.put(widgetId, ifl);
+			ifl.setId(widgetId);
+			commandArray.put(widgetId, ifl);
+			layout.addView(ifl, createParam(paramsHeigh));
+			paramsHeigh += 90;
+			IF if_command = new IF();
+			setCommand(++current_head, if_command);
+			setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
+					current_head);
+			break;
+		case R.id.mStop:
+			widgetId++;
+			MultiTextLabel mtvS = new MultiTextLabel(this);
+			mtvS.setText("停止");
+			mtvS.setId(widgetId);
+			layout.addView(mtvS);
+			commandArray.put(widgetId, mtvS);
+			/*
+			 * send_command = new SEND(); send_command.setOperation("Back");
+			 * setCommand(++current_head, send_command);
+			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
+			 * current_head);
+			 */
+
 			break;
 		case R.id.itemRun:
-			buildLowLevelCommands();
+			timer_task.setRoot(root_command);
+			timer_task.setIO(mInputStream, mOutputStream);
+			timer_task.run();
+			clearCommands();
 			break;
 		case R.id.itemSave:
 			// CommandClass cc = new CommandClass();
@@ -418,58 +584,82 @@ public class MainActivity extends Activity implements Runnable {
 				Log.d("ThreadTimer", "ThreadTimer.run 1");
 				current_command = current_command.run(mInputStream,
 						mOutputStream, variables);
-				Log.d("ThreadTimer", "ThreadTimer.run 2");
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-				}
+				/*
+				 * Log.d("ThreadTimer", "ThreadTimer.run 2"); try {
+				 * Thread.sleep(1000); } catch (InterruptedException e) { }
+				 */
 			} while (!current_command.isEnd());
 			current_command.run(mInputStream, mOutputStream, variables);
 		}
 	}
-	
-	public void searchingPrimary(int id, IfLabel label){
-		for (int i = id - 1; i >= 0; i--) {
-			if (null != multiTextLabels.get(i)) {
-				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != multiEditLabels.get(i)) {
-				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != ifLabels.get(i)) {
-				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			}
-		}
+
+	/* Layoutに設置する場所やらの設定 */
+	private RelativeLayout.LayoutParams createParam(int h) {
+		LayoutParams params = new RelativeLayout.LayoutParams(WC, WC);
+		params.setMargins(0, h, 0, 0);
+		return params;
 	}
-	
-	public void searchingPrimary(int id, MultiEditLabel label){
-		for (int i = id - 1; i >= 0; i--) {
-			if (null != multiTextLabels.get(i)) {
-				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != multiEditLabels.get(i)) {
-				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != ifLabels.get(i)) {
-				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			}
+
+	private Command setIfCommand(CommandClass commandClass) {
+		HashMap<String, String> hm = new HashMap<String, String>();
+		String item = "";
+		String left = "";
+		String right = "";
+		CompOperation operation = CompOperation.EQUAL;
+		IF if_command = new IF();
+
+		hm = commandClass.getAttribute();
+		left = hm.get("IF_LFET_VALUE");
+		right = hm.get("IF_RIGHT_VALUE");
+
+		item = hm.get("CONDITION");
+		if (item.equalsIgnoreCase("に等しい")) {
+			operation = CompOperation.EQUAL;
+		} else if (item.equalsIgnoreCase("に等しくない")) {
+			operation = CompOperation.NOT_EQUAL;
+		} else if (item.equalsIgnoreCase("より小さい")) {
+			operation = CompOperation.LESS_THAN;
+		} else if (item.equalsIgnoreCase("より大きい")) {
+			operation = CompOperation.MORE_THAN;
+		} else if (item.equalsIgnoreCase("以上")) {
+			operation = CompOperation.MORE_EQUAL;
+		} else if (item.equalsIgnoreCase("以下")) {
+			operation = CompOperation.LESS_EQUAL;
 		}
+
+		if_command.setOperation(left, operation, right);
+		return if_command;
 	}
-	
-	public void searchingPrimary(int id, MultiTextLabel label){
-		for (int i = id - 1; i >= 0; i--) {
-			if (null != multiTextLabels.get(i)) {
-				multiTextLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != multiEditLabels.get(i)) {
-				multiEditLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			} else if (null != ifLabels.get(i)) {
-				ifLabels.get(i).hm.setPrimaryConnection(label.hm);
-				break;
-			}
-		}
+
+	private Command setWaitCommand(CommandClass commandClass) {
+		HashMap<String, String> hm = new HashMap<String, String>();
+		String timeS = "";
+		int timeI = 0;
+
+		WAIT wait_command = new WAIT();
+		hm = commandClass.getAttribute();
+
+		timeS = hm.get("TIME");
+		timeI = Integer.parseInt(timeS);
+		wait_command.setTime(timeI * 1000);
+
+		return wait_command;
 	}
+
+	private Command setSendCommand(CommandClass commandClass) {
+		HashMap<String, String> hm = new HashMap<String, String>();
+		String item = "";
+
+		SEND send_command = new SEND();
+		hm = commandClass.getAttribute();
+
+		item = hm.get("MASSAGE");
+		send_command.setOperation(item);
+
+		return send_command;
+	}
+
 }
+/*
+ * 2次間数で矢印を描く Y軸の相対的な距離を取り、
+ */
