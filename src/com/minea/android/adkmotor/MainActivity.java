@@ -68,6 +68,11 @@ public class MainActivity extends Activity implements Runnable {
 	HashMap<Integer, Command> commands;
 	HashMap<Integer, CommandClass> commandArray; // Widget の一覧保持
 	static SQLiteDatabase mydb; // 矢印の情報保持用
+	static int fromWidgetId = 0;
+	static float from_x = 0;
+	static float from_y = 0;
+	static float to_x = 0;
+	static float to_y = 0;
 
 	int paramsHeigh = 90; // 命令ラベルと命令ラベルの間
 	private final int WC = ViewGroup.LayoutParams.WRAP_CONTENT; // Layout用のパラメータ
@@ -185,9 +190,6 @@ public class MainActivity extends Activity implements Runnable {
 		MySQLiteOpenHelper hlpr = new MySQLiteOpenHelper(
 				getApplicationContext(), CREATE_TABLE_SQL);
 		mydb = hlpr.getWritableDatabase();
-		Cursor cursor = mydb.query("CommandConnection", new String[] {
-				"ArrowID", "FromWidgetID", "ToWidgetID" }, null, null, null,
-				null, null);
 
 		/* レイアウトを作成する */
 		layout = new RelativeLayout(this);
@@ -196,6 +198,7 @@ public class MainActivity extends Activity implements Runnable {
 		/* root widgetの作成 */
 		MultiTextLabel rootLabel = new MultiTextLabel(this);
 		rootLabel.setText("スタート");
+		rootLabel.setId(widgetId);
 		layout.addView(rootLabel);
 		widgetId++;
 	}
@@ -353,13 +356,10 @@ public class MainActivity extends Activity implements Runnable {
 		switch (item.getItemId()) {
 		case R.id.mAdvance:
 			/* Widget の処理 */
-			widgetId++;
-			final String itemS = "";
-			final ClipData.Item clipItem;
 			final MultiTextLabel mtvA = new MultiTextLabel(this);
 			mtvA.setText("前進");
 			mtvA.setId(widgetId);
-
+			widgetId++;
 			commandArray.put(widgetId, mtvA);
 			// commandConnection.put(widgetId, Pair.create(3, -1));
 
@@ -384,7 +384,6 @@ public class MainActivity extends Activity implements Runnable {
 					}
 						break;
 					case DragEvent.ACTION_DRAG_ENDED: {
-						Log.i("DragSample", "Drag ended.");
 					}
 						break;
 					case DragEvent.ACTION_DRAG_LOCATION: {
@@ -392,28 +391,30 @@ public class MainActivity extends Activity implements Runnable {
 					}
 						break;
 					case DragEvent.ACTION_DROP: {
-						// ドロップ時にボタンの色を赤色に変化
 						Log.i("DragSample", "Drop!!");
 						arrow.setId(arrowId);
 						arrowId++;
-
-						// システムのクリップボードを取得
-						ClipboardManager cm = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
-						// クリップボードからClipDataを取得
-						ClipData cd = cm.getPrimaryClip();
-						// クリップデータからItemを取得
-						ClipData.Item clipItem = cd.getItemAt(0);
-						String itemString = clipItem.getText().toString();
-
+						
+						to_x = event.getX();
+						to_y = event.getY();
+						
 						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						layout.addView(arrow, createParam(paramsHeigh - 150));
+						//layout.addView(arrow, createParam(paramsHeigh - 150));
+						layout.addView(arrow);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrow.getId());
+						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvA.getId());
-						values.put("FromWidgetID", Integer.parseInt(itemString));
-						Log.d("FromWidgetID", itemString);
 						mydb.insert("CommandConnection", null, values);
 
+						/*
+						 * Cursor cursor = mydb.query("CommandConnection", new
+						 * String[] { "ArrowID", "FromWidgetID", "ToWidgetID" },
+						 * null, null, null, null, null);
+						 * //startManagingCursor(cursor); boolean isEof =
+						 * cursor.moveToFirst(); Log.d("drop", "fromWidgetID" +
+						 * cursor.getInt(1));
+						 */
 						result = true;
 
 						break;
@@ -424,11 +425,11 @@ public class MainActivity extends Activity implements Runnable {
 			});
 			break;
 		case R.id.mBack:
-			widgetId++;
 			final MultiTextLabel mtvB = new MultiTextLabel(this);
 			mtvB.setText("後退");
 			mtvB.setId(widgetId);
 			commandArray.put(widgetId, mtvB);
+			widgetId++;
 			/*
 			 * send_command = new SEND(); send_command.setOperation("Back");
 			 * setCommand(++current_head, send_command);
@@ -479,37 +480,37 @@ public class MainActivity extends Activity implements Runnable {
 			});
 			break;
 		case R.id.mRRotate:
-			widgetId++;
 			MultiTextLabel mtvRR = new MultiTextLabel(this);
 			mtvRR.setText("右回転");
 			mtvRR.setId(widgetId);
 			commandArray.put(widgetId, mtvRR);
+			widgetId++;
 
 			layout.addView(mtvRR, createParam(paramsHeigh));
 			paramsHeigh += 90;
 			break;
 		case R.id.mLRotate:
-			widgetId++;
 			MultiTextLabel mtvLR = new MultiTextLabel(this);
 			mtvLR.setText("左回転");
 			mtvLR.setId(widgetId);
 			commandArray.put(widgetId, mtvLR);
+			widgetId++;
 			layout.addView(mtvLR, createParam(paramsHeigh));
 			paramsHeigh += 90;
 			break;
 		case R.id.mWait:
+			WaitLabel waitL = new WaitLabel(this);
+			waitL.setId(widgetId);
+			commandArray.put(widgetId, waitL);
 			widgetId++;
-			MultiEditLabel metW = new MultiEditLabel(this);
-			metW.setId(widgetId);
-			commandArray.put(widgetId, metW);
-			layout.addView(metW, createParam(paramsHeigh));
+			layout.addView(waitL, createParam(paramsHeigh));
 			paramsHeigh += 90;
 			break;
 		case R.id.mIf:
-			widgetId++;
 			IfLabel ifl = new IfLabel(this);
 			ifl.setId(widgetId);
 			commandArray.put(widgetId, ifl);
+			widgetId++;
 			layout.addView(ifl, createParam(paramsHeigh));
 			paramsHeigh += 90;
 			IF if_command = new IF();
@@ -522,8 +523,24 @@ public class MainActivity extends Activity implements Runnable {
 			MultiTextLabel mtvS = new MultiTextLabel(this);
 			mtvS.setText("停止");
 			mtvS.setId(widgetId);
-			layout.addView(mtvS);
+			layout.addView(mtvS, createParam(paramsHeigh));
+			paramsHeigh += 90;
 			commandArray.put(widgetId, mtvS);
+			/*
+			 * send_command = new SEND(); send_command.setOperation("Back");
+			 * setCommand(++current_head, send_command);
+			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
+			 * current_head);
+			 */
+
+			break;
+		case R.id.mExpr:
+			widgetId++;
+			ExprLabel exprL = new ExprLabel(this);
+			exprL.setId(widgetId);
+			layout.addView(exprL, createParam(paramsHeigh));
+			paramsHeigh += 90;
+			commandArray.put(widgetId, exprL);
 			/*
 			 * send_command = new SEND(); send_command.setOperation("Back");
 			 * setCommand(++current_head, send_command);

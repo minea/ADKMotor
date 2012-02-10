@@ -35,6 +35,10 @@
                     android:id="@+id/mIf"
                     android:enabled="true"
                     android:title="もし○○ならば"/>
+                <item
+                    android:id="@+id/mExpr"
+                    android:enabled="true"
+                    android:title="計算・定義"/>
             </menu>
         </item>
         <item

@@ -36,8 +36,155 @@ interface CommandClass {
 	public void setAttribute(String name, String attri);
 
 	public HashMap<String, String> getAttribute();
-	
-	public void setSQLite(SQLiteDatabase mySql);
+}
+
+class MultiTextLabel extends View implements CommandClass {
+
+	private int width = 100;
+	private int height = 50;
+	private String mainText = "";
+	HashMap<String, String> commandHm;
+
+	public MultiTextLabel(Context context) {
+		super(context);
+		commandHm = new HashMap<String, String>();
+		setAttribute("TYPE", "SEND");
+
+		/* ドラッグの処理 */
+		setOnLongClickListener(new View.OnLongClickListener() {
+			public boolean onLongClick(View v) {
+				ClipData data = ClipData.newPlainText("text",
+						"text : " + v.toString());
+				Log.i("startDrag", "fromX= " + v.getX() + "fromY="+v.getY() );
+				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
+				return true;
+			}
+		});
+	}
+
+	public void setText(String s) {
+		mainText = s;
+
+		if (s.equals("前進")) {
+			setAttribute("MASSAGE", "ADVANCE");
+		} else if (s.equals("後退")) {
+			setAttribute("MASSAGE", "BACK");
+		} else if (s.equals("右回転")) {
+			setAttribute("MASSAGE", "RROTATE");
+		} else if (s.equals("左回転")) {
+			setAttribute("MASSAGE", "LROTATE");
+		} else if (s.equals("停止")) {
+			setAttribute("MASSAGE", "STOP");
+		}
+	}
+
+	@Override
+	protected void onDraw(Canvas canvas) {
+		// 背景の描画
+		Paint bgPaint = new Paint();
+		bgPaint.setColor(Color.LTGRAY);
+		// canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(),
+		// bgPaint);
+		canvas.drawRect(0, 0, 100, 50, bgPaint);
+		// メインテキスト用ペイント
+		Paint mainTextPaint = new Paint();
+		mainTextPaint.setColor(Color.BLACK);
+		mainTextPaint.setTextSize(25);
+		mainTextPaint.setAntiAlias(true);
+
+		// メインテキストの描画
+		if (mainText != null) {
+			PointF textPoint = getTextPoint(mainTextPaint, mainText, width / 2,
+					height / 2);
+			canvas.drawText(mainText, textPoint.x, textPoint.y, mainTextPaint);
+		}
+	}
+
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		// ビューのサイズを設定する
+		setMeasuredDimension(width, height);
+	}
+
+	private PointF getTextPoint(Paint textPaint, String text, int centerX,
+			int centerY) {
+		FontMetrics fontMetrics = textPaint.getFontMetrics();
+
+		// 文字列の幅を取得
+		float textWidth = textPaint.measureText(text);
+
+		// 中心にしたいX座標から文字列の幅の半分を引く
+		float baseX = centerX - textWidth / 2;
+
+		// 中心にしたいY座標からAscentとDescentの半分を引く
+		float baseY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2;
+
+		return new PointF(baseX, baseY);
+	}
+
+	@Override
+	public void setAttribute(String name, String attri) {
+		// name:ユニークな変数名 attri:ローレベルコマンド
+		commandHm.put(name, attri);
+	}
+
+	@Override
+	public HashMap<String, String> getAttribute() {
+		return commandHm;
+	}
+
+	@Override
+	public boolean onDragEvent(DragEvent event) {
+		boolean result = false;
+		switch (event.getAction()) {
+		case DragEvent.ACTION_DRAG_STARTED: {
+			// ドラッグ開始時に呼び出し
+			Log.i("DragSampleView", "Drag started, event=" + event);
+			// FromWidgetIdを代入
+			MainActivity.fromWidgetId = getId();
+			MainActivity.from_x = event.getX();
+			MainActivity.from_y = event.getY();
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENDED: {
+			// ドラッグ終了時に呼び出し
+			Log.i("DragSampleView", "Drag ended.");
+		}
+			break;
+		case DragEvent.ACTION_DRAG_LOCATION: {
+			// ドラッグ中に呼び出し
+			Log.i("DragSampleView", "... seeing drag locations ...");
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DROP: {
+			// ドロップ時に呼び出し
+			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
+			ContentValues values = new ContentValues();
+			values.put("FromWidgetID", getId());
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENTERED: {
+			// ドラッグ開始直後に呼び出し
+			Log.i("DragSampleView", "Entered " + this);
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_EXITED: {
+			// ドラッグ終了直前に呼び出し
+			Log.i("DragSampleView", "Exited " + this);
+			result = true;
+		}
+			break;
+		default:
+			Log.i("DragSampleView", "other drag event: " + event);
+			result = true;
+			break;
+		}
+		return result;
+	}
 }
 
 class IfLabel extends LinearLayout implements CommandClass {
@@ -45,7 +192,6 @@ class IfLabel extends LinearLayout implements CommandClass {
 	SpannableStringBuilder sb; // getText用
 	String item; // Spinner のテキスト取得用
 	HashMap<String, String> commandHm;
-	SQLiteDatabase mydb; // 矢印保管
 
 	public IfLabel(Context context) {
 		super(context);
@@ -173,17 +319,17 @@ class IfLabel extends LinearLayout implements CommandClass {
 	}
 
 	@Override
-	public void setSQLite(SQLiteDatabase mySql){
-		mydb = mySql;
-	}
-	
-	@Override
 	public boolean onDragEvent(DragEvent event) {
 		boolean result = false;
 		switch (event.getAction()) {
 		case DragEvent.ACTION_DRAG_STARTED: {
 			// ドラッグ開始時に呼び出し
 			Log.i("DragSampleView", "Drag started, event=" + event);
+
+			// FromWidgetIdを代入
+			MainActivity.fromWidgetId = getId();
+			MainActivity.from_x = event.getX();
+			MainActivity.from_y = event.getY();
 			result = true;
 		}
 			break;
@@ -225,66 +371,69 @@ class IfLabel extends LinearLayout implements CommandClass {
 	}
 }
 
-class MultiEditLabel extends EditText implements TextWatcher, CommandClass {
+class WaitLabel extends LinearLayout implements CommandClass {
+	EditText ed0, ed1;
 	HashMap<String, String> commandHm;
-	SQLiteDatabase mydb; // 矢印保管
 
-	public MultiEditLabel(Context context) {
+	public WaitLabel(Context context) {
 		super(context);
 		commandHm = new HashMap<String, String>();
+		init(context);
 
-		setEnabled(true);
-		setFocusableInTouchMode(true);
-		setFocusable(true);
+		/* ドラッグの処理 */
+		setOnLongClickListener(new View.OnLongClickListener() {
+			public boolean onLongClick(View v) {
+				ClipData data = ClipData.newPlainText("text",
+						"text : " + v.toString());
+				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
+				return true;
+			}
+		});
 
+	}
+
+	public void init(Context context) {
+		setOrientation(HORIZONTAL);
+		setBackgroundColor(Color.LTGRAY);
+		setAttribute("TYPE", "WAIT");
+		ed0 = new EditText(context);
+		ed0.setTextColor(Color.BLACK);
+		ed0.setBackgroundColor(Color.LTGRAY);
+		ed0.setWidth(80);
 		// 文字数制限 3桁まで
 		InputFilter[] _inputFilter = new InputFilter[1];
 		_inputFilter[0] = new InputFilter.LengthFilter(3);
-		setFilters(_inputFilter);
+		ed0.setFilters(_inputFilter);
 
 		// 文字制限 数字のみ
-		setInputType(InputType.TYPE_CLASS_NUMBER);
+		ed0.setInputType(InputType.TYPE_CLASS_NUMBER);
 
-		// テキストの色を白, テキストの背景をダークグレイ
-		setTextColor(Color.BLACK);
-		setBackgroundColor(Color.LTGRAY);
+		ed0.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before,
+					int count) {
+			}
 
-		addTextChangedListener(this);
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {
+			}
 
-		/* ドラッグの処理 */
-		setOnLongClickListener(new View.OnLongClickListener() {
-			public boolean onLongClick(View v) {
-				ClipData data = ClipData.newPlainText("text",
-						"text : " + v.toString());
-				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
-				return true;
+			@Override
+			public void afterTextChanged(Editable edit) {
+				String s = edit.toString();
+				setAttribute("TIME", s);
 			}
 		});
-	}
 
-	@Override
-	public void beforeTextChanged(CharSequence s, int start, int count,
-			int after) {
+		addView(ed0);
 
-	}
-
-	@Override
-	public void onTextChanged(CharSequence s, int start, int before, int count) {
-
-	}
-
-	@Override
-	public void afterTextChanged(Editable edit) {
-		String s = edit.toString();
-		setAttribute("TYPE", "WAIT");
-		setAttribute("TIME", s);
-		Log.d("WAIT", s);
-	}
-
-	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		// ビューのサイズを設定する
-		setMeasuredDimension(150, 60);
+		TextView tx0 = new TextView(context);
+		tx0.setTextColor(Color.BLACK);
+		tx0.setBackgroundColor(Color.LTGRAY);
+		tx0.setWidth(40);
+		tx0.setText("sec");
+		addView(tx0);
 	}
 
 	@Override
@@ -297,11 +446,6 @@ class MultiEditLabel extends EditText implements TextWatcher, CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-	
-	@Override
-	public void setSQLite(SQLiteDatabase mySql){
-		mydb = mySql;
-	}
 
 	@Override
 	public boolean onDragEvent(DragEvent event) {
@@ -310,7 +454,10 @@ class MultiEditLabel extends EditText implements TextWatcher, CommandClass {
 		case DragEvent.ACTION_DRAG_STARTED: {
 			// ドラッグ開始時に呼び出し
 			Log.i("DragSampleView", "Drag started, event=" + event);
-			
+			// FromWidgetIdを代入
+			MainActivity.fromWidgetId = getId();
+			MainActivity.from_x = event.getX();
+			MainActivity.from_y = event.getY();
 			result = true;
 		}
 			break;
@@ -352,164 +499,14 @@ class MultiEditLabel extends EditText implements TextWatcher, CommandClass {
 	}
 }
 
-class MultiTextLabel extends View implements CommandClass {
 
-	private int width = 100;
-	private int height = 50;
-	private String mainText = "";
-	HashMap<String, String> commandHm;
-	SQLiteDatabase mydb; // 矢印保管
-
-	public MultiTextLabel(Context context) {
-		super(context);
-		commandHm = new HashMap<String, String>();
-		setAttribute("TYPE", "SEND");
-
-		/* ドラッグの処理 */
-		setOnLongClickListener(new View.OnLongClickListener() {
-			public boolean onLongClick(View v) {
-				ClipData data = ClipData.newPlainText("text",
-						"text : " + v.toString());
-				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
-				return true;
-			}
-		});
-	}
-
-	public void setText(String s) {
-		mainText = s;
-
-		if (s.equals("前進")) {
-			setAttribute("MASSAGE", "ADVANCE");
-		} else if (s.equals("後退")) {
-			setAttribute("MASSAGE", "BACK");
-		} else if (s.equals("右回転")) {
-			setAttribute("MASSAGE", "RROTATE");
-		} else if (s.equals("左回転")) {
-			setAttribute("MASSAGE", "LROTATE");
-		} else if (s.equals("停止")) {
-			setAttribute("MASSAGE", "STOP");
-		}
-	}
-
-	@Override
-	protected void onDraw(Canvas canvas) {
-		// 背景の描画
-		Paint bgPaint = new Paint();
-		bgPaint.setColor(Color.LTGRAY);
-		// canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(),
-		// bgPaint);
-		canvas.drawRect(0, 0, 100, 50, bgPaint);
-		// メインテキスト用ペイント
-		Paint mainTextPaint = new Paint();
-		mainTextPaint.setColor(Color.BLACK);
-		mainTextPaint.setTextSize(25);
-		mainTextPaint.setAntiAlias(true);
-
-		// メインテキストの描画
-		if (mainText != null) {
-			PointF textPoint = getTextPoint(mainTextPaint, mainText, width / 2,
-					height / 2);
-			canvas.drawText(mainText, textPoint.x, textPoint.y, mainTextPaint);
-		}
-	}
-
-	@Override
-	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		// ビューのサイズを設定する
-		setMeasuredDimension(width, height);
-	}
-
-	private PointF getTextPoint(Paint textPaint, String text, int centerX,
-			int centerY) {
-		FontMetrics fontMetrics = textPaint.getFontMetrics();
-
-		// 文字列の幅を取得
-		float textWidth = textPaint.measureText(text);
-
-		// 中心にしたいX座標から文字列の幅の半分を引く
-		float baseX = centerX - textWidth / 2;
-
-		// 中心にしたいY座標からAscentとDescentの半分を引く
-		float baseY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2;
-
-		return new PointF(baseX, baseY);
-	}
-
-	@Override
-	public void setAttribute(String name, String attri) {
-		// name:ユニークな変数名 attri:ローレベルコマンド
-		commandHm.put(name, attri);
-	}
-
-	@Override
-	public HashMap<String, String> getAttribute() {
-		return commandHm;
-	}
-	
-	@Override
-	public void setSQLite(SQLiteDatabase mySql){
-		mydb = mySql;
-	}
-
-	@Override
-	public boolean onDragEvent(DragEvent event) {
-		boolean result = false;
-		switch (event.getAction()) {
-		case DragEvent.ACTION_DRAG_STARTED: {
-			// ドラッグ開始時に呼び出し
-			Log.i("DragSampleView", "Drag started, event=" + event);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENDED: {
-			// ドラッグ終了時に呼び出し
-			Log.i("DragSampleView", "Drag ended.");
-		}
-			break;
-		case DragEvent.ACTION_DRAG_LOCATION: {
-			// ドラッグ中に呼び出し
-			Log.i("DragSampleView", "... seeing drag locations ...");
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DROP: {
-			// ドロップ時に呼び出し
-			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
-			ContentValues values = new ContentValues();
-			values.put("FromWidgetID", getId());
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENTERED: {
-			// ドラッグ開始直後に呼び出し
-			Log.i("DragSampleView", "Entered " + this);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_EXITED: {
-			// ドラッグ終了直前に呼び出し
-			Log.i("DragSampleView", "Exited " + this);
-			result = true;
-		}
-			break;
-		default:
-			Log.i("DragSampleView", "other drag event: " + event);
-			result = true;
-			break;
-		}
-		return result;
-	}
-}
-
-class EmuLabel extends LinearLayout implements CommandClass {
+class ExprLabel extends LinearLayout implements CommandClass {
 	EditText ed0, ed1;
 	SpannableStringBuilder sb; // getText用
 	String item; // Spinner のテキスト取得用
 	HashMap<String, String> commandHm;
-	SQLiteDatabase mydb; // 矢印保管
 
-	public EmuLabel(Context context) {
+	public ExprLabel(Context context) {
 		super(context);
 		commandHm = new HashMap<String, String>();
 		init(context);
@@ -626,11 +623,6 @@ class EmuLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-	
-	@Override
-	public void setSQLite(SQLiteDatabase mySql){
-		mydb = mySql;
-	}
 
 	@Override
 	public boolean onDragEvent(DragEvent event) {
@@ -639,6 +631,10 @@ class EmuLabel extends LinearLayout implements CommandClass {
 		case DragEvent.ACTION_DRAG_STARTED: {
 			// ドラッグ開始時に呼び出し
 			Log.i("DragSampleView", "Drag started, event=" + event);
+			// FromWidgetIdを代入
+			MainActivity.fromWidgetId = getId();
+			MainActivity.from_x = event.getX();
+			MainActivity.from_y = event.getY();
 			result = true;
 		}
 			break;
@@ -682,26 +678,33 @@ class EmuLabel extends LinearLayout implements CommandClass {
 
 class ArrowDraw extends View {
 	Bitmap bmp;
+	float from_x, from_y, to_x, to_y;
 
 	public ArrowDraw(Context context) {
 		super(context);
-
 	}
 
 	@Override
 	public void onDraw(Canvas canvas) {
+		from_x = MainActivity.from_x;
+		from_y = MainActivity.from_y;
+		to_x = MainActivity.to_x;
+		to_y = MainActivity.to_y;
+				
 		Paint pathPaint = new Paint();
 		pathPaint.setStyle(Paint.Style.STROKE);
 		pathPaint.setStrokeWidth(4);
 		pathPaint.setColor(Color.BLACK);
 		Path mPath = new Path();
+		
+		Log.d("Arrow","FromX" + from_x+"FromY"+from_y+"ToX"+to_x+"ToY"+to_y);
 
-		mPath.moveTo(50, 0);
-		mPath.lineTo(50, 23);
-		mPath.lineTo(42, 18);
-		mPath.lineTo(50, 25);
-		mPath.lineTo(58, 18);
-		mPath.lineTo(50, 25);
+		mPath.moveTo(from_x, from_y);
+		mPath.lineTo(from_x, to_y);
+		mPath.lineTo(from_x - 8, to_y - 5);
+		mPath.lineTo(from_x, to_y);
+		mPath.lineTo(from_x + 8, to_y - 5);
+		mPath.lineTo(from_x, to_y);
 		canvas.drawPath(mPath, pathPaint);
 	}
 
