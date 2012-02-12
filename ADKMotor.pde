@@ -90,8 +90,9 @@ void loop()
                 }
                 // 左旋回
                 else if(msg[1] == 0x4) {
-                  digitalWrite(inM1Pin1, LOW); 
-                  digitalWrite(inM2Pin1, HIGH);  
+                  digitalWrite(inM1Pin2, LOW);
+                  digitalWrite(inM2Pin2, LOW);
+                  digitalWrite(inM2Pin1, HIGH);
                   digitalWrite(pwmM1Pin, LOW);  
                   digitalWrite(pwmM2Pin, HIGH);
                   msg[0] = 0x1;  

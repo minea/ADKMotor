@@ -97,6 +97,7 @@ public class MainActivity extends Activity implements Runnable {
 	// コマンド追加(idは自動的に追加)
 	public int setCommand(Command _command) {
 		commands.put(new Integer(++current_head), _command);
+		Log.d("current_head", "is " + current_head);
 		return current_head;
 	}
 
@@ -201,6 +202,7 @@ public class MainActivity extends Activity implements Runnable {
 		rootLabel.setText("スタート");
 		rootLabel.setId(widgetId);
 		layout.addView(rootLabel);
+		commandArray.put(0, rootLabel);
 		widgetId++;
 	}
 
@@ -360,8 +362,8 @@ public class MainActivity extends Activity implements Runnable {
 			final MultiTextLabel mtvA = new MultiTextLabel(this);
 			mtvA.setText("前進");
 			mtvA.setId(widgetId);
-			widgetId++;
 			commandArray.put(widgetId, mtvA);
+			widgetId++;
 			// commandConnection.put(widgetId, Pair.create(3, -1));
 
 			/*
@@ -431,12 +433,6 @@ public class MainActivity extends Activity implements Runnable {
 			mtvB.setId(widgetId);
 			commandArray.put(widgetId, mtvB);
 			widgetId++;
-			/*
-			 * send_command = new SEND(); send_command.setOperation("Back");
-			 * setCommand(++current_head, send_command);
-			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
-			 * current_head); layout.addView(arrow);
-			 */
 			layout.addView(mtvB, createParam(paramsHeigh));
 			paramsHeigh += 90;
 
@@ -454,9 +450,6 @@ public class MainActivity extends Activity implements Runnable {
 
 						to_y = mtvB.getTop();
 
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
 						layout.addView(arrowB);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowB.getId());
@@ -606,7 +599,6 @@ public class MainActivity extends Activity implements Runnable {
 			iftl.setText("はい");
 			iffl.setText("いいえ");
 			// IfLabel を Layout に貼付け
-			widgetId++;
 			layout.addView(ifl, createParam(paramsHeigh));
 			// Ifのはいといいえを貼付け
 			LayoutParams params = new RelativeLayout.LayoutParams(WC, WC);
@@ -616,6 +608,7 @@ public class MainActivity extends Activity implements Runnable {
 			params_.setMargins(130, paramsHeigh + 60, 0, 0);
 			layout.addView(iffl, params_);
 			commandArray.put(widgetId, ifl);
+			widgetId++;
 			paramsHeigh += 140;
 
 			final ArrowDraw arrowT = new ArrowDraw(this);
@@ -686,10 +679,10 @@ public class MainActivity extends Activity implements Runnable {
 			final MultiTextLabel mtvS = new MultiTextLabel(this);
 			mtvS.setText("停止");
 			mtvS.setId(widgetId);
+			commandArray.put(widgetId, mtvS);
 			widgetId++;
 			layout.addView(mtvS, createParam(paramsHeigh));
 			paramsHeigh += 90;
-			commandArray.put(widgetId, mtvS);
 
 			final ArrowDraw arrowS = new ArrowDraw(this);
 			mtvS.setOnDragListener(new View.OnDragListener() {
@@ -723,9 +716,9 @@ public class MainActivity extends Activity implements Runnable {
 			});
 			break;
 		case R.id.mExpr:
-			widgetId++;
 			ExprLabel exprL = new ExprLabel(this);
 			exprL.setId(widgetId);
+			widgetId++;
 			layout.addView(exprL, createParam(paramsHeigh));
 			paramsHeigh += 90;
 			commandArray.put(widgetId, exprL);
@@ -739,14 +732,12 @@ public class MainActivity extends Activity implements Runnable {
 			break;
 		case R.id.itemRun:
 			// CommandArray から Commands に変換
-			commandArrayToCommands(commandArray,widgetId);
-			//commandsToConnection(arrowId);
+			commandArrayToCommands(commandArray, widgetId);
+			Log.i("widget ID", "is " + widgetId);
+
+			// commandsToConnection(arrowId);
 			// Command の接続
-			
-			
-			
-			
-			
+
 			timer_task.setRoot(root_command);
 			timer_task.setIO(mInputStream, mOutputStream);
 			timer_task.run();
@@ -820,73 +811,75 @@ public class MainActivity extends Activity implements Runnable {
 		HashMap<String, String> commandHm;
 		CommandClass commandClass;
 
-		for (int i = 1; i <= lastId; i++) {
-			if (null != commandArray.get(i)) {
-				commandClass = commandArray.get(i);
-				commandHm = commandClass.getAttribute();
-				// 前進などのコマンド
-				if (commandHm.get("TYPE").equalsIgnoreCase("SEND")) {
-					SEND send_command = new SEND();
-					send_command.setOperation(commandHm.get("MASSAGE"));
-					
-					setCommand(i, send_command);
-					setConnection(i - 1,
-							Command.ConnectionTarget.NEXT, current_head);
-				} else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
-					String item = "";
-					String left = "";
-					String right = "";
-					CompOperation operation = CompOperation.EQUAL;
+		for (int i = 1; i < lastId; i++) {
+			commandClass = commandArray.get(i);
+			if( commandClass == null){
+				Log.i("commandClass "+i,"NULL");
+			} else {
+			commandHm = commandClass.getAttribute();
+			Log.i("commandClass " + i, "is " + commandHm.get("MASSAGE"));
 
-					IF if_command = new IF();
+			// 前進などのコマンド
+			if (commandHm.get("TYPE").equalsIgnoreCase("SEND")) {
+				SEND send_command = new SEND();
+				send_command.setOperation(commandHm.get("MASSAGE"));
 
-					left = commandHm.get("IF_LFET_VALUE");
-					right = commandHm.get("IF_RIGHT_VALUE");
+				Log.d("set " + i, "SEND COMMND");
+				setCommand(i, send_command);
+				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
+			} else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
+				String item = "";
+				String left = "";
+				String right = "";
+				CompOperation operation = CompOperation.EQUAL;
 
-					item = commandHm.get("CONDITION");
-					if (item.equalsIgnoreCase("に等しい")) {
-						operation = CompOperation.EQUAL;
-					} else if (item.equalsIgnoreCase("に等しくない")) {
-						operation = CompOperation.NOT_EQUAL;
-					} else if (item.equalsIgnoreCase("より小さい")) {
-						operation = CompOperation.LESS_THAN;
-					} else if (item.equalsIgnoreCase("より大きい")) {
-						operation = CompOperation.MORE_THAN;
-					} else if (item.equalsIgnoreCase("以上")) {
-						operation = CompOperation.MORE_EQUAL;
-					} else if (item.equalsIgnoreCase("以下")) {
-						operation = CompOperation.LESS_EQUAL;
-					}
-					if_command.setOperation(left, operation, right);
-					
-					setCommand(i, if_command);
-					setConnection(i - 1,
-							Command.ConnectionTarget.NEXT, current_head);
-				} else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
-					String timeS = "";
-					int timeI = 0;
+				IF if_command = new IF();
 
-					WAIT wait_command = new WAIT();
-					timeS = commandHm.get("TIME");
-					timeI = Integer.parseInt(timeS);
-					wait_command.setTime(timeI * 1000);
-					
-					setCommand(i, wait_command);
-					setConnection(i - 1,
-							Command.ConnectionTarget.NEXT, current_head);
-				} else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
-					String timeS = "";
-					int timeI = 0;
+				left = commandHm.get("IF_LFET_VALUE");
+				right = commandHm.get("IF_RIGHT_VALUE");
 
-					EXPR expr_command = new EXPR();
-
-					timeS = commandHm.get("TIME");
-					timeI = Integer.parseInt(timeS);
-					// wait_command.setTime(timeI * 1000);
+				item = commandHm.get("CONDITION");
+				if (item.equalsIgnoreCase("に等しい")) {
+					operation = CompOperation.EQUAL;
+				} else if (item.equalsIgnoreCase("に等しくない")) {
+					operation = CompOperation.NOT_EQUAL;
+				} else if (item.equalsIgnoreCase("より小さい")) {
+					operation = CompOperation.LESS_THAN;
+				} else if (item.equalsIgnoreCase("より大きい")) {
+					operation = CompOperation.MORE_THAN;
+				} else if (item.equalsIgnoreCase("以上")) {
+					operation = CompOperation.MORE_EQUAL;
+				} else if (item.equalsIgnoreCase("以下")) {
+					operation = CompOperation.LESS_EQUAL;
 				}
-			}
+				if_command.setOperation(left, operation, right);
+
+				setCommand(i, if_command);
+				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
+			} else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
+				String timeS = "";
+				int timeI = 0;
+
+				WAIT wait_command = new WAIT();
+				timeS = commandHm.get("TIME");
+				timeI = Integer.parseInt(timeS);
+				wait_command.setTime(timeI * 1000);
+
+				setCommand(i, wait_command);
+				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
+			} else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
+				String timeS = "";
+				int timeI = 0;
+
+				EXPR expr_command = new EXPR();
+
+				timeS = commandHm.get("TIME");
+				timeI = Integer.parseInt(timeS);
+				// wait_command.setTime(timeI * 1000);
+			}}
 		}
 	}
+
 }
 /*
  * 2次間数で矢印を描く Y軸の相対的な距離を取り、

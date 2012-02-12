@@ -152,6 +152,8 @@ class SEND implements Command {
 	String arduino_command;
 	private static final byte ADVANCE_COMMAND = 0x1;
 	private static final byte BACK_COMMAND = 0x2;
+	private static final byte RROTATE_COMMAND = 0x3;
+	private static final byte LROTATE_COMMAND = 0x4;
 
 	SEND() {
 		// �f�t�H���g�̎��̃R�}���h�͏I��
@@ -203,26 +205,27 @@ class SEND implements Command {
 		// ������Arduino�֖��߂𑗂�R�[�h��ǉ�����
 		byte bin_command = (byte) 0x1;
 		if (arduino_command.equals("ADVANCE")) {
+			Log.i("SEND", "HAS ADVANCE");
 			byte value = (byte) ADVANCE_COMMAND;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("BACK")) {
-			Log.e("SEND", "HAS Back");
+			Log.i("SEND", "HAS Back");
 			byte value = (byte) BACK_COMMAND;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("RROTATE")) {
-			Log.e("SEND", "HAS Back");
-			byte value = (byte) BACK_COMMAND;
+			Log.i("SEND", "HAS RROTATE");
+			byte value = (byte) RROTATE_COMMAND;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("LROTATE")) {
-			Log.e("SEND", "HAS Back");
-			byte value = (byte) BACK_COMMAND;
+			Log.i("SEND", "HAS LROTATE");
+			byte value = (byte) LROTATE_COMMAND;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("STOP")) {
-			Log.d("SEND", "STOP");
+			Log.i("SEND", "STOP");
 			byte value = (byte) 0x0;
 			sendCommand(ostream, bin_command, value);
 		} else if (arduino_command.equals("End")) {
-			Log.d("SEND", "CANCEL");
+			Log.i("SEND", "CANCEL");
 			byte value = (byte) 0x0;
 			sendCommand(ostream, bin_command, value);
 		}
