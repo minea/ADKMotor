@@ -720,7 +720,23 @@ public class MainActivity extends Activity implements Runnable {
 
 			// commandsToConnection(arrowId);
 			// Command の接続
+			Cursor c = mydb.query("CommandConnection", new String[] { "ArrowID","FromWidgetID",
+					"ToWidgetID","IfFlag"}, null, null, null, null, null);
+	         
+			String text = "";
+	        boolean isEof = c.moveToFirst();
+	        while (isEof) {
+	            text = String.format("ArrowID "+ c.getInt(0) + ", FromWidgetID "+ c.getInt(1) + 
+						", ToWidgetID " + c.getInt(2) + ", IfFlag" +c.getInt(3));
+	            Log.e("SQLite",text);
+	            isEof = c.moveToNext();
+	        }
+	        c.close();
+	        mydb.close();
+	    
+	 
 
+			
 			timer_task.setRoot(root_command);
 			timer_task.setIO(mInputStream, mOutputStream);
 			timer_task.run();
