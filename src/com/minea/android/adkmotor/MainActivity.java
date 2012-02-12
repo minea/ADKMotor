@@ -738,6 +738,15 @@ public class MainActivity extends Activity implements Runnable {
 
 			break;
 		case R.id.itemRun:
+			// CommandArray から Commands に変換
+			commandArrayToCommands(commandArray,widgetId);
+			//commandsToConnection(arrowId);
+			// Command の接続
+			
+			
+			
+			
+			
 			timer_task.setRoot(root_command);
 			timer_task.setIO(mInputStream, mOutputStream);
 			timer_task.run();
@@ -805,65 +814,79 @@ public class MainActivity extends Activity implements Runnable {
 		return params;
 	}
 
-	private Command setIfCommand(CommandClass commandClass) {
-		HashMap<String, String> hm = new HashMap<String, String>();
-		String item = "";
-		String left = "";
-		String right = "";
-		CompOperation operation = CompOperation.EQUAL;
-		IF if_command = new IF();
+	public void commandArrayToCommands(
+			HashMap<Integer, CommandClass> commandArray, int lastId) {
 
-		hm = commandClass.getAttribute();
-		left = hm.get("IF_LFET_VALUE");
-		right = hm.get("IF_RIGHT_VALUE");
+		HashMap<String, String> commandHm;
+		CommandClass commandClass;
 
-		item = hm.get("CONDITION");
-		if (item.equalsIgnoreCase("に等しい")) {
-			operation = CompOperation.EQUAL;
-		} else if (item.equalsIgnoreCase("に等しくない")) {
-			operation = CompOperation.NOT_EQUAL;
-		} else if (item.equalsIgnoreCase("より小さい")) {
-			operation = CompOperation.LESS_THAN;
-		} else if (item.equalsIgnoreCase("より大きい")) {
-			operation = CompOperation.MORE_THAN;
-		} else if (item.equalsIgnoreCase("以上")) {
-			operation = CompOperation.MORE_EQUAL;
-		} else if (item.equalsIgnoreCase("以下")) {
-			operation = CompOperation.LESS_EQUAL;
+		for (int i = 1; i <= lastId; i++) {
+			if (null != commandArray.get(i)) {
+				commandClass = commandArray.get(i);
+				commandHm = commandClass.getAttribute();
+				// 前進などのコマンド
+				if (commandHm.get("TYPE").equalsIgnoreCase("SEND")) {
+					SEND send_command = new SEND();
+					send_command.setOperation(commandHm.get("MASSAGE"));
+					
+					setCommand(i, send_command);
+					setConnection(i - 1,
+							Command.ConnectionTarget.NEXT, current_head);
+				} else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
+					String item = "";
+					String left = "";
+					String right = "";
+					CompOperation operation = CompOperation.EQUAL;
+
+					IF if_command = new IF();
+
+					left = commandHm.get("IF_LFET_VALUE");
+					right = commandHm.get("IF_RIGHT_VALUE");
+
+					item = commandHm.get("CONDITION");
+					if (item.equalsIgnoreCase("に等しい")) {
+						operation = CompOperation.EQUAL;
+					} else if (item.equalsIgnoreCase("に等しくない")) {
+						operation = CompOperation.NOT_EQUAL;
+					} else if (item.equalsIgnoreCase("より小さい")) {
+						operation = CompOperation.LESS_THAN;
+					} else if (item.equalsIgnoreCase("より大きい")) {
+						operation = CompOperation.MORE_THAN;
+					} else if (item.equalsIgnoreCase("以上")) {
+						operation = CompOperation.MORE_EQUAL;
+					} else if (item.equalsIgnoreCase("以下")) {
+						operation = CompOperation.LESS_EQUAL;
+					}
+					if_command.setOperation(left, operation, right);
+					
+					setCommand(i, if_command);
+					setConnection(i - 1,
+							Command.ConnectionTarget.NEXT, current_head);
+				} else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
+					String timeS = "";
+					int timeI = 0;
+
+					WAIT wait_command = new WAIT();
+					timeS = commandHm.get("TIME");
+					timeI = Integer.parseInt(timeS);
+					wait_command.setTime(timeI * 1000);
+					
+					setCommand(i, wait_command);
+					setConnection(i - 1,
+							Command.ConnectionTarget.NEXT, current_head);
+				} else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
+					String timeS = "";
+					int timeI = 0;
+
+					EXPR expr_command = new EXPR();
+
+					timeS = commandHm.get("TIME");
+					timeI = Integer.parseInt(timeS);
+					// wait_command.setTime(timeI * 1000);
+				}
+			}
 		}
-
-		if_command.setOperation(left, operation, right);
-		return if_command;
 	}
-
-	private Command setWaitCommand(CommandClass commandClass) {
-		HashMap<String, String> hm = new HashMap<String, String>();
-		String timeS = "";
-		int timeI = 0;
-
-		WAIT wait_command = new WAIT();
-		hm = commandClass.getAttribute();
-
-		timeS = hm.get("TIME");
-		timeI = Integer.parseInt(timeS);
-		wait_command.setTime(timeI * 1000);
-
-		return wait_command;
-	}
-
-	private Command setSendCommand(CommandClass commandClass) {
-		HashMap<String, String> hm = new HashMap<String, String>();
-		String item = "";
-
-		SEND send_command = new SEND();
-		hm = commandClass.getAttribute();
-
-		item = hm.get("MASSAGE");
-		send_command.setOperation(item);
-
-		return send_command;
-	}
-
 }
 /*
  * 2次間数で矢印を描く Y軸の相対的な距離を取り、
