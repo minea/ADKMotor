@@ -729,10 +729,23 @@ public class MainActivity extends Activity implements Runnable {
 	            text = String.format("ArrowID "+ c.getInt(0) + ", FromWidgetID "+ c.getInt(1) + 
 						", ToWidgetID " + c.getInt(2) + ", IfFlag" +c.getInt(3));
 	            Log.e("SQLite",text);
+	            if (c.getInt(3) == 0) {
+					setConnection(c.getInt(1), Command.ConnectionTarget.NEXT,
+							c.getInt(2));
+					Log.e("Connection","NEXT");
+				} else if (c.getInt(3) == 1) {
+					setConnection(c.getInt(1), Command.ConnectionTarget.IF_TRUE,
+							c.getInt(2));
+					Log.e("Connection","IF_TRUE");
+				} else if (c.getInt(3) == -1) {
+					setConnection(c.getInt(1), Command.ConnectionTarget.IF_FALSE,
+							c.getInt(2));
+					Log.e("Connection","IF_FALSE");
+				}
 	            isEof = c.moveToNext();
 	        }
 	        c.close();
-	        mydb.close();
+	        //mydb.close();
 	    
 	 
 
@@ -825,7 +838,6 @@ public class MainActivity extends Activity implements Runnable {
 
 				Log.d("set " + i, "SEND COMMND");
 				setCommand(i, send_command);
-				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
 			} else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
 				String item = "";
 				String left = "";
@@ -854,7 +866,6 @@ public class MainActivity extends Activity implements Runnable {
 				if_command.setOperation(left, operation, right);
 
 				setCommand(i, if_command);
-				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
 			} else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
 				String timeS = "";
 				int timeI = 0;
@@ -865,7 +876,6 @@ public class MainActivity extends Activity implements Runnable {
 				wait_command.setTime(timeI * 1000);
 
 				setCommand(i, wait_command);
-				setConnection(i - 1, Command.ConnectionTarget.NEXT, i);
 			} else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
 				String timeS = "";
 				int timeI = 0;
