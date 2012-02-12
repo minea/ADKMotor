@@ -69,7 +69,8 @@ public class MainActivity extends Activity implements Runnable {
 	HashMap<Integer, CommandClass> commandArray; // Widget の一覧保持
 	static SQLiteDatabase mydb; // 矢印の情報保持用
 	static int fromWidgetId = 0;
-	static float from_x = 0;
+	static int ifFlag = 0; // True == 1, false == -1, null == 0
+	static float from_x = 50;
 	static float from_y = 0;
 	static float to_y = 0;
 
@@ -79,7 +80,7 @@ public class MainActivity extends Activity implements Runnable {
 	private final String CREATE_TABLE_SQL = "CREATE TABLE CommandConnection ( ArrowID INTEGER, "
 			+ "FromWidgetID INTEGER, "
 			+ "ToWidgetID INTEGER, "
-			+ "IfBOOLEAN BOOLEAM);";
+			+ "IfFlag INTEGER);";
 
 	public MainActivity() {
 		commands = new HashMap<Integer, Command>();
@@ -395,20 +396,21 @@ public class MainActivity extends Activity implements Runnable {
 					}
 						break;
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("mtvA", "---Drop---");
+						to_y = mtvA.getTop();
+						arrow.setFromToPoint(from_x, from_y, to_y);
 						arrow.setId(arrowId);
 						arrowId++;
-
-						to_y = mtvA.getTop();
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
 						layout.addView(arrow);
+						
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrow.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvA.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 
 						/*
@@ -445,17 +447,21 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("mtvB", "---Drop---");
 						arrowB.setId(arrowId);
 						arrowId++;
 
 						to_y = mtvB.getTop();
-
+						arrowB.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowB);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowB.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvB.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 
@@ -484,20 +490,21 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("mtvRR", "---Drop---");
 						arrowRR.setId(arrowId);
 						arrowId++;
 
 						to_y = mtvRR.getTop();
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
+						arrowRR.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowRR);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowRR.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvRR.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 
@@ -525,20 +532,22 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("mtvLR", "---Drop---");
+						
 						arrowLR.setId(arrowId);
 						arrowId++;
 
 						to_y = mtvLR.getTop();
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
+						arrowLR.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowLR);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowLR.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvLR.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 
@@ -564,20 +573,20 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("waitL", "---Drop---");
 						arrowW.setId(arrowId);
 						arrowId++;
-
 						to_y = waitL.getTop();
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
+						arrowW.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowW);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowW.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", waitL.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 
@@ -589,9 +598,9 @@ public class MainActivity extends Activity implements Runnable {
 			});
 			break;
 		case R.id.mIf:
-			IfLabel ifl = new IfLabel(this);
-			final IfTFLabel iftl = new IfTFLabel(this);
-			final IfTFLabel iffl = new IfTFLabel(this);
+			final IfLabel ifl = new IfLabel(this);
+			IfTFLabel iftl = new IfTFLabel(this);
+			IfTFLabel iffl = new IfTFLabel(this);
 			ifl.setId(widgetId);
 			iftl.setId(widgetId);
 			iffl.setId(widgetId);
@@ -612,25 +621,28 @@ public class MainActivity extends Activity implements Runnable {
 			widgetId++;
 			paramsHeigh += 140;
 
-			final ArrowDraw arrowT = new ArrowDraw(this);
+			final ArrowDraw arrowIf = new ArrowDraw(this);
 			/* ドラッグアンドドロップ処理 */
-			iftl.setOnDragListener(new View.OnDragListener() {
+			ifl.setOnDragListener(new View.OnDragListener() {
 				public boolean onDrag(View v, DragEvent event) {
 					final int action = event.getAction();
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("DragSample", "Drop!!");
-						arrowT.setId(arrowId);
+						arrowIf.setId(arrowId);
 						arrowId++;
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						layout.addView(arrowT);
+						to_y = ifl.getTop();
+						arrowIf.setFromToPoint(from_x, from_y, to_y);
+						layout.addView(arrowIf);
 						ContentValues values = new ContentValues();
-						values.put("ArrowID", arrowT.getId());
+						values.put("ArrowID", arrowIf.getId());
 						values.put("FromWidgetID", fromWidgetId);
-						values.put("ToWidgetID", iftl.getId());
-						values.put("IfBOOLEAN", true);
+						values.put("ToWidgetID", ifl.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 
@@ -640,36 +652,6 @@ public class MainActivity extends Activity implements Runnable {
 					return result;
 				}
 			});
-
-			final ArrowDraw arrowF = new ArrowDraw(this);
-			/* ドラッグアンドドロップ処理 */
-			iffl.setOnDragListener(new View.OnDragListener() {
-				public boolean onDrag(View v, DragEvent event) {
-					final int action = event.getAction();
-					boolean result = false;
-					switch (action) {
-					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
-						arrowF.setId(arrowId);
-						arrowId++;
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						layout.addView(arrowT);
-						ContentValues values = new ContentValues();
-						values.put("ArrowID", arrowF.getId());
-						values.put("FromWidgetID", fromWidgetId);
-						values.put("ToWidgetID", iffl.getId());
-						values.put("IfBOOLEAN", false);
-						mydb.insert("CommandConnection", null, values);
-						result = true;
-
-						break;
-					}
-					}
-					return result;
-				}
-			});
-
 			/*
 			 * IF if_command = new IF(); setCommand(++current_head, if_command);
 			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
@@ -695,17 +677,17 @@ public class MainActivity extends Activity implements Runnable {
 						Log.i("DragSample", "Drop!!");
 						arrowS.setId(arrowId);
 						arrowId++;
-
+						arrowS.setFromToPoint(from_x, from_y, to_y);
 						to_y = mtvS.getTop();
-
-						/* 矢印のfrom,to情報をSQLiteに書き込み */
-						// layout.addView(arrow, createParam(paramsHeigh -
-						// 150));
 						layout.addView(arrowS);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowS.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvS.getId());
+						if(ifFlag != 0){
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
 						mydb.insert("CommandConnection", null, values);
 						result = true;
 

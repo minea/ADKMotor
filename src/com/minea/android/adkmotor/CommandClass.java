@@ -57,7 +57,7 @@ class MultiTextLabel extends View implements CommandClass {
 						"text : " + v.toString());
 				// FromWidgetIdを代入
 				Log.i("MTL StartDrag", "Drag getID = " + getId());
-				MainActivity.from_x = getX() + 50;
+				MainActivity.from_x += getX();
 				MainActivity.from_y = getBottom();
 				MainActivity.fromWidgetId = getId();
 				
@@ -137,7 +137,7 @@ class MultiTextLabel extends View implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-/*
+
 	@Override
 	public boolean onDragEvent(DragEvent event) {
 		boolean result = false;
@@ -148,30 +148,30 @@ class MultiTextLabel extends View implements CommandClass {
 			break;
 		case DragEvent.ACTION_DRAG_ENDED: {
 			// ドラッグ終了時に呼び出し
-			Log.i("DragSampleView", "Drag ended.");
+			//Log.i("DragSampleView", "Drag ended.");
 		}
 			break;
 		case DragEvent.ACTION_DRAG_LOCATION: {
 			// ドラッグ中に呼び出し
-			Log.i("DragSampleView", "... seeing drag locations ...");
+			//Log.i("DragSampleView", "... seeing drag locations ...");
 			result = true;
 		}
 			break;
 		case DragEvent.ACTION_DROP: {
 			// ドロップ時に呼び出し
-			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
+			//Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
 			result = true;
 		}
 			break;
 		case DragEvent.ACTION_DRAG_ENTERED: {
 			// ドラッグ開始直後に呼び出し
-			Log.i("DragSampleView", "Entered " + this);
+			//Log.i("DragSampleView", "Entered " + this);
 			result = true;
 		}
 			break;
 		case DragEvent.ACTION_DRAG_EXITED: {
 			// ドラッグ終了直前に呼び出し
-			Log.i("DragSampleView", "Exited " + this);
+			//Log.i("DragSampleView", "Exited " + this);
 			result = true;
 		}
 			break;
@@ -181,7 +181,7 @@ class MultiTextLabel extends View implements CommandClass {
 			break;
 		}
 		return result;
-	}*/
+	}
 }
 
 class IfLabel extends LinearLayout implements CommandClass {
@@ -323,9 +323,16 @@ class IfTFLabel extends View implements CommandClass {
 						"text : " + v.toString());
 				// FromWidgetIdを代入
 				Log.i("MTL StartDrag", "Drag getID = " + getId());
-				MainActivity.from_x = getX() + 50;
+				MainActivity.from_x += getX();
 				MainActivity.from_y = getBottom();
 				MainActivity.fromWidgetId = getId();
+				
+				// はい と いいえ でフラグを立てる
+				if(mainText.equalsIgnoreCase("はい")){
+					MainActivity.ifFlag = 1;
+				} else if(mainText.equalsIgnoreCase("いいえ")){
+					MainActivity.ifFlag = -1;
+				}
 
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
@@ -391,6 +398,40 @@ class IfTFLabel extends View implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
+	
+	@Override
+	public boolean onDragEvent(DragEvent event) {
+		boolean result = false;
+		switch (event.getAction()) {
+		case DragEvent.ACTION_DRAG_STARTED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENDED: {
+		}
+			break;
+		case DragEvent.ACTION_DRAG_LOCATION: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DROP: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENTERED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_EXITED: {
+			result = true;
+		}
+			break;
+		default:
+			result = true;
+			break;
+		}
+		return result;
+	}
 }
 
 class WaitLabel extends LinearLayout implements CommandClass {
@@ -409,6 +450,8 @@ class WaitLabel extends LinearLayout implements CommandClass {
 						"text : " + v.toString());
 				// FromWidgetIdを代入
 				Log.i("WaitL StartDrag", "Drag getID = " + getId());
+				MainActivity.from_x += getX();
+				MainActivity.from_y = getBottom();
 				MainActivity.fromWidgetId = getId();
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
@@ -471,6 +514,40 @@ class WaitLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
+	
+	@Override
+	public boolean onDragEvent(DragEvent event) {
+		boolean result = false;
+		switch (event.getAction()) {
+		case DragEvent.ACTION_DRAG_STARTED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENDED: {
+		}
+			break;
+		case DragEvent.ACTION_DRAG_LOCATION: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DROP: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENTERED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_EXITED: {
+			result = true;
+		}
+			break;
+		default:
+			result = true;
+			break;
+		}
+		return result;
+	}
 }
 
 
@@ -492,6 +569,8 @@ class ExprLabel extends LinearLayout implements CommandClass {
 						"text : " + v.toString());
 				// FromWidgetIdを代入
 				Log.i("ExpL StartDrag", "Drag getID = " + getId());
+				MainActivity.from_x += getX();
+				MainActivity.from_y = getBottom();
 				MainActivity.fromWidgetId = getId();
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
@@ -600,30 +679,67 @@ class ExprLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
+	
+	@Override
+	public boolean onDragEvent(DragEvent event) {
+		boolean result = false;
+		switch (event.getAction()) {
+		case DragEvent.ACTION_DRAG_STARTED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENDED: {
+		}
+			break;
+		case DragEvent.ACTION_DRAG_LOCATION: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DROP: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_ENTERED: {
+			result = true;
+		}
+			break;
+		case DragEvent.ACTION_DRAG_EXITED: {
+			result = true;
+		}
+			break;
+		default:
+			result = true;
+			break;
+		}
+		return result;
+	}
 }
 
 class ArrowDraw extends View {
-	Bitmap bmp;
-	float from_x, from_y, to_x, to_y;
-
+	float from_x;
+	float from_y;
+	float to_y;
+	
 	public ArrowDraw(Context context) {
 		super(context);
+	}
+	
+	public void setFromToPoint(float _from_x, float _from_y, float _to_y){
+		from_x = _from_x;
+		from_y = _from_y;
+		to_y = _to_y;
 	}
 
 	@Override
 	public void onDraw(Canvas canvas) {
-		Log.d("Arrow onDraw Now","!!!!Start!!!!");
-		from_x = MainActivity.from_x;
-		from_y = MainActivity.from_y;
-		to_y = from_y + MainActivity.to_y;
-				
 		Paint pathPaint = new Paint();
 		pathPaint.setStyle(Paint.Style.STROKE);
 		pathPaint.setStrokeWidth(4);
 		pathPaint.setColor(Color.BLACK);
+		pathPaint.setAntiAlias(true);
 		Path mPath = new Path();
 		
-		Log.d("Arrow","FromX" + from_x+"FromY"+from_y+"ToX"+to_x+"ToY"+to_y);
+		Log.i("Arrow","from_x "+from_x+", from_y "+from_x+", to_y "+to_y);
 
 		mPath.moveTo(from_x, from_y);
 		mPath.lineTo(from_x, to_y);
@@ -634,10 +750,16 @@ class ArrowDraw extends View {
 		canvas.drawPath(mPath, pathPaint);
 	}
 
+	/*
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-		// ビューのサイズを設定する
-		setMeasuredDimension(100, 100);
-	}
+		super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+	    // 引数の情報から画面の横方向の描画領域のサイズを取得する
+	    int width = MeasureSpec.getSize(widthMeasureSpec);
+	    int height = MeasureSpec.getSize(heightMeasureSpec);
+	    // Viewの描画サイズを横方向を画面端まで使う指定
+	    setMeasuredDimension(width,height);
+	}*/
+	
 }
 /* wedget生成時にコンストラクタにSQLiteを引き渡す */
