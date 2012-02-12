@@ -55,7 +55,12 @@ class MultiTextLabel extends View implements CommandClass {
 			public boolean onLongClick(View v) {
 				ClipData data = ClipData.newPlainText("text",
 						"text : " + v.toString());
-				Log.i("startDrag", "fromX= " + v.getX() + "fromY="+v.getY() );
+				// FromWidgetIdを代入
+				Log.i("MTL StartDrag", "Drag getID = " + getId());
+				MainActivity.from_x = getX() + 50;
+				MainActivity.from_y = getBottom();
+				MainActivity.fromWidgetId = getId();
+				
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
 			}
@@ -132,18 +137,12 @@ class MultiTextLabel extends View implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-
+/*
 	@Override
 	public boolean onDragEvent(DragEvent event) {
 		boolean result = false;
 		switch (event.getAction()) {
 		case DragEvent.ACTION_DRAG_STARTED: {
-			// ドラッグ開始時に呼び出し
-			Log.i("DragSampleView", "Drag started, event=" + event);
-			// FromWidgetIdを代入
-			MainActivity.fromWidgetId = getId();
-			MainActivity.from_x = event.getX();
-			MainActivity.from_y = event.getY();
 			result = true;
 		}
 			break;
@@ -161,8 +160,6 @@ class MultiTextLabel extends View implements CommandClass {
 		case DragEvent.ACTION_DROP: {
 			// ドロップ時に呼び出し
 			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
-			ContentValues values = new ContentValues();
-			values.put("FromWidgetID", getId());
 			result = true;
 		}
 			break;
@@ -184,7 +181,7 @@ class MultiTextLabel extends View implements CommandClass {
 			break;
 		}
 		return result;
-	}
+	}*/
 }
 
 class IfLabel extends LinearLayout implements CommandClass {
@@ -197,17 +194,6 @@ class IfLabel extends LinearLayout implements CommandClass {
 		super(context);
 		commandHm = new HashMap<String, String>();
 		init(context);
-
-		/* ドラッグの処理 */
-		setOnLongClickListener(new View.OnLongClickListener() {
-			public boolean onLongClick(View v) {
-				ClipData data = ClipData.newPlainText("text",
-						"text : " + v.toString());
-				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
-				return true;
-			}
-		});
-
 	}
 
 	public void init(Context context) {
@@ -317,57 +303,93 @@ class IfLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
+}
+
+class IfTFLabel extends View implements CommandClass {
+
+	private int width = 75;
+	private int height = 50;
+	private String mainText = "";
+	public int superWidgetId;
+	HashMap<String, String> commandHm;
+
+	public IfTFLabel(Context context) {
+		super(context);
+
+		/* ドラッグの処理 */
+		setOnLongClickListener(new View.OnLongClickListener() {
+			public boolean onLongClick(View v) {
+				ClipData data = ClipData.newPlainText("text",
+						"text : " + v.toString());
+				// FromWidgetIdを代入
+				Log.i("MTL StartDrag", "Drag getID = " + getId());
+				MainActivity.from_x = getX() + 50;
+				MainActivity.from_y = getBottom();
+				MainActivity.fromWidgetId = getId();
+
+				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
+				return true;
+			}
+		});
+	}
+
+	public void setText(String s) {
+		mainText = s;
+	}
 
 	@Override
-	public boolean onDragEvent(DragEvent event) {
-		boolean result = false;
-		switch (event.getAction()) {
-		case DragEvent.ACTION_DRAG_STARTED: {
-			// ドラッグ開始時に呼び出し
-			Log.i("DragSampleView", "Drag started, event=" + event);
+	protected void onDraw(Canvas canvas) {
+		// 背景の描画
+		Paint bgPaint = new Paint();
+		bgPaint.setColor(Color.LTGRAY);
+		// canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(),
+		// bgPaint);
+		canvas.drawRect(0, 0, 75, 50, bgPaint);
+		// メインテキスト用ペイント
+		Paint mainTextPaint = new Paint();
+		mainTextPaint.setColor(Color.BLACK);
+		mainTextPaint.setTextSize(25);
+		mainTextPaint.setAntiAlias(true);
 
-			// FromWidgetIdを代入
-			MainActivity.fromWidgetId = getId();
-			MainActivity.from_x = event.getX();
-			MainActivity.from_y = event.getY();
-			result = true;
+		// メインテキストの描画
+		if (mainText != null) {
+			PointF textPoint = getTextPoint(mainTextPaint, mainText, width / 2,
+					height / 2);
+			canvas.drawText(mainText, textPoint.x, textPoint.y, mainTextPaint);
 		}
-			break;
-		case DragEvent.ACTION_DRAG_ENDED: {
-			// ドラッグ終了時に呼び出し
-			Log.i("DragSampleView", "Drag ended.");
-		}
-			break;
-		case DragEvent.ACTION_DRAG_LOCATION: {
-			// ドラッグ中に呼び出し
-			Log.i("DragSampleView", "... seeing drag locations ...");
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DROP: {
-			// ドロップ時に呼び出し
-			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENTERED: {
-			// ドラッグ開始直後に呼び出し
-			Log.i("DragSampleView", "Entered " + this);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_EXITED: {
-			// ドラッグ終了直前に呼び出し
-			Log.i("DragSampleView", "Exited " + this);
-			result = true;
-		}
-			break;
-		default:
-			Log.i("DragSampleView", "other drag event: " + event);
-			result = true;
-			break;
-		}
-		return result;
+	}
+
+	@Override
+	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+		// ビューのサイズを設定する
+		setMeasuredDimension(width, height);
+	}
+
+	private PointF getTextPoint(Paint textPaint, String text, int centerX,
+			int centerY) {
+		FontMetrics fontMetrics = textPaint.getFontMetrics();
+
+		// 文字列の幅を取得
+		float textWidth = textPaint.measureText(text);
+
+		// 中心にしたいX座標から文字列の幅の半分を引く
+		float baseX = centerX - textWidth / 2;
+
+		// 中心にしたいY座標からAscentとDescentの半分を引く
+		float baseY = centerY - (fontMetrics.ascent + fontMetrics.descent) / 2;
+
+		return new PointF(baseX, baseY);
+	}
+
+	@Override
+	public void setAttribute(String name, String attri) {
+		// name:ユニークな変数名 attri:ローレベルコマンド
+		commandHm.put(name, attri);
+	}
+
+	@Override
+	public HashMap<String, String> getAttribute() {
+		return commandHm;
 	}
 }
 
@@ -385,6 +407,9 @@ class WaitLabel extends LinearLayout implements CommandClass {
 			public boolean onLongClick(View v) {
 				ClipData data = ClipData.newPlainText("text",
 						"text : " + v.toString());
+				// FromWidgetIdを代入
+				Log.i("WaitL StartDrag", "Drag getID = " + getId());
+				MainActivity.fromWidgetId = getId();
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
 			}
@@ -446,57 +471,6 @@ class WaitLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-
-	@Override
-	public boolean onDragEvent(DragEvent event) {
-		boolean result = false;
-		switch (event.getAction()) {
-		case DragEvent.ACTION_DRAG_STARTED: {
-			// ドラッグ開始時に呼び出し
-			Log.i("DragSampleView", "Drag started, event=" + event);
-			// FromWidgetIdを代入
-			MainActivity.fromWidgetId = getId();
-			MainActivity.from_x = event.getX();
-			MainActivity.from_y = event.getY();
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENDED: {
-			// ドラッグ終了時に呼び出し
-			Log.i("DragSampleView", "Drag ended.");
-		}
-			break;
-		case DragEvent.ACTION_DRAG_LOCATION: {
-			// ドラッグ中に呼び出し
-			Log.i("DragSampleView", "... seeing drag locations ...");
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DROP: {
-			// ドロップ時に呼び出し
-			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENTERED: {
-			// ドラッグ開始直後に呼び出し
-			Log.i("DragSampleView", "Entered " + this);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_EXITED: {
-			// ドラッグ終了直前に呼び出し
-			Log.i("DragSampleView", "Exited " + this);
-			result = true;
-		}
-			break;
-		default:
-			Log.i("DragSampleView", "other drag event: " + event);
-			result = true;
-			break;
-		}
-		return result;
-	}
 }
 
 
@@ -516,6 +490,9 @@ class ExprLabel extends LinearLayout implements CommandClass {
 			public boolean onLongClick(View v) {
 				ClipData data = ClipData.newPlainText("text",
 						"text : " + v.toString());
+				// FromWidgetIdを代入
+				Log.i("ExpL StartDrag", "Drag getID = " + getId());
+				MainActivity.fromWidgetId = getId();
 				v.startDrag(data, new DragShadowBuilder(v), (Object) v, 0);
 				return true;
 			}
@@ -623,57 +600,6 @@ class ExprLabel extends LinearLayout implements CommandClass {
 	public HashMap<String, String> getAttribute() {
 		return commandHm;
 	}
-
-	@Override
-	public boolean onDragEvent(DragEvent event) {
-		boolean result = false;
-		switch (event.getAction()) {
-		case DragEvent.ACTION_DRAG_STARTED: {
-			// ドラッグ開始時に呼び出し
-			Log.i("DragSampleView", "Drag started, event=" + event);
-			// FromWidgetIdを代入
-			MainActivity.fromWidgetId = getId();
-			MainActivity.from_x = event.getX();
-			MainActivity.from_y = event.getY();
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENDED: {
-			// ドラッグ終了時に呼び出し
-			Log.i("DragSampleView", "Drag ended.");
-		}
-			break;
-		case DragEvent.ACTION_DRAG_LOCATION: {
-			// ドラッグ中に呼び出し
-			Log.i("DragSampleView", "... seeing drag locations ...");
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DROP: {
-			// ドロップ時に呼び出し
-			Log.i("DragSampleView", "Got a drop! =" + this + " event=" + event);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_ENTERED: {
-			// ドラッグ開始直後に呼び出し
-			Log.i("DragSampleView", "Entered " + this);
-			result = true;
-		}
-			break;
-		case DragEvent.ACTION_DRAG_EXITED: {
-			// ドラッグ終了直前に呼び出し
-			Log.i("DragSampleView", "Exited " + this);
-			result = true;
-		}
-			break;
-		default:
-			Log.i("DragSampleView", "other drag event: " + event);
-			result = true;
-			break;
-		}
-		return result;
-	}
 }
 
 class ArrowDraw extends View {
@@ -686,10 +612,10 @@ class ArrowDraw extends View {
 
 	@Override
 	public void onDraw(Canvas canvas) {
+		Log.d("Arrow onDraw Now","!!!!Start!!!!");
 		from_x = MainActivity.from_x;
 		from_y = MainActivity.from_y;
-		to_x = MainActivity.to_x;
-		to_y = MainActivity.to_y;
+		to_y = from_y + MainActivity.to_y;
 				
 		Paint pathPaint = new Paint();
 		pathPaint.setStyle(Paint.Style.STROKE);
@@ -711,7 +637,7 @@ class ArrowDraw extends View {
 	@Override
 	protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
 		// ビューのサイズを設定する
-		setMeasuredDimension(60, 30);
+		setMeasuredDimension(100, 100);
 	}
 }
 /* wedget生成時にコンストラクタにSQLiteを引き渡す */
