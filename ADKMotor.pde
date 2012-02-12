@@ -79,22 +79,23 @@ void loop()
                 } 
                 // 右旋回
                 else if(msg[1] == 0x3) {
-                  digitalWrite(inM1Pin2, LOW);
-                  digitalWrite(inM2Pin2, LOW);
-                  digitalWrite(inM1Pin1, HIGH);  
-                  digitalWrite(pwmM1Pin, HIGH);  
-                  digitalWrite(pwmM2Pin, LOW);
+                                    digitalWrite(inM1Pin1, LOW);
+                  digitalWrite(inM2Pin1, LOW);
+                  digitalWrite(inM1Pin2, HIGH);
+                  digitalWrite(inM2Pin2, HIGH);
+                  digitalWrite(pwmM1Pin, HIGH);
+                  digitalWrite(pwmM2Pin, HIGH);
                     msg[0] = 0x1;  
                     msg[1] = 0x1;  
                     acc.write(msg, 2);  
                 }
                 // 左旋回
                 else if(msg[1] == 0x4) {
-                  digitalWrite(inM1Pin2, LOW);
-                  digitalWrite(inM2Pin2, LOW);
-                  digitalWrite(inM2Pin1, HIGH);
-                  digitalWrite(pwmM1Pin, LOW);  
-                  digitalWrite(pwmM2Pin, HIGH);
+                  digitalWrite(inM1Pin1, LOW);  digitalWrite(inM2Pin1, LOW);
+                  digitalWrite(inM1Pin2, LOW);  digitalWrite(inM2Pin2, LOW);
+                  digitalWrite(pwmM1Pin, LOW);  digitalWrite(pwmM2Pin, LOW);
+
+                  digitalWrite(inM2Pin1, HIGH); digitalWrite(pwmM2Pin, HIGH);
                   msg[0] = 0x1;  
                   msg[1] = 0x1;  
                   acc.write(msg, 2); 

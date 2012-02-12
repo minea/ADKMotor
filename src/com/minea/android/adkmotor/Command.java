@@ -182,8 +182,6 @@ class SEND implements Command {
 
 	void sendCommand(FileOutputStream ostream, byte bin_command, byte value) {
 		byte[] buffer = new byte[2];
-		if (value != 0x0 && value != 0x1 && value != 0x2)
-			value = 0x0;
 		// 2byte �̃I���I���v���g�R��
 		// 0x1 0x0 �� 0x1 0x1
 		buffer[0] = bin_command;

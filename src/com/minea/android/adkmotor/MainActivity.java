@@ -325,12 +325,13 @@ public class MainActivity extends Activity implements Runnable {
 	// アプリ -> アクセサリ
 	public void sendCommand(byte command, byte value) {
 		byte[] buffer = new byte[2];
-		if (value != 0x0 && value != 0x1 && value != 0x2)
-			value = 0x0;
+		/*if (value != 0x0 && value != 0x1 && value != 0x2 && value != 0x3 && value != 0x4)
+			value = 0x0;*/
 		// 2byte のオレオレプロトコル
 		// 0x1 0x0 や 0x1 0x1
 		buffer[0] = command;
 		buffer[1] = value;
+		Log.e("sendCommand","value is "+ buffer[1]);
 		if (mOutputStream != null) {
 			try {
 				mOutputStream.write(buffer);
