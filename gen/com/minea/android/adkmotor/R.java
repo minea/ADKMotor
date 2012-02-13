@@ -17,6 +17,7 @@ public final class R {
     public static final class id {
         public static final int group1=0x7f070000;
         public static final int itemAdd=0x7f070001;
+        public static final int itemDevice=0x7f07000c;
         public static final int itemRun=0x7f07000a;
         public static final int itemSave=0x7f07000b;
         public static final int mAdvance=0x7f070002;

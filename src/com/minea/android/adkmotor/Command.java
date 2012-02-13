@@ -353,7 +353,7 @@ class IF implements Command {
 				Integer temp = new Integer(left_value);
 				left_value = temp.intValue();
 			} catch (NumberFormatException oops) {
-				Log.d("IF", "Unrecognized variable at left: " + left);
+				Log.d("IF1", "Unrecognized variable at left: " + left);
 			}
 		}
 
@@ -365,21 +365,23 @@ class IF implements Command {
 				Integer temp = new Integer(right_value);
 				right_value = temp.intValue();
 			} catch (NumberFormatException oops) {
-				Log.d("IF", "Unrecognized variable at right: " + right);
+				Log.d("IF1", "Unrecognized variable at right: " + right);
 			}
 		}
 
+		// 両辺が変数名ではなく数字の直接入力だった場合
 		if (left_value == 0) {
 			try {
 				left_value = Integer.parseInt(left);
 			} catch (NumberFormatException oops) {
-				Log.d("IF", "Unrecognized variable at left: " + left);
+				Log.d("IF2", "Unrecognized variable at left: " + left);
 			}
-		} else if (right_value == 0) {
+		}
+		if (right_value == 0) {
 			try {
 				right_value = Integer.parseInt(right);
 			} catch (NumberFormatException oops) {
-				Log.d("IF", "Unrecognized variable at right: " + right);
+				Log.d("IF2", "Unrecognized variable at right: " + right);
 			}
 		}
 
@@ -472,8 +474,7 @@ class EXPR implements Command {
 	public Command run(FileInputStream istream, FileOutputStream ostream,
 			HashMap<String, Integer> hm) {
 		Log.d("Command", "EXPR.run");
-		// ���Ӓl�𓾂� �^����ꂽ���Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo��
-		// �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+
 		int left_value = 0;
 		if (hm.containsKey(left))
 			left_value = hm.get(left).intValue();
@@ -485,8 +486,7 @@ class EXPR implements Command {
 				Log.d("EXPR", "Unrecognized variable at left: " + left);
 			}
 		}
-		// �E�Ӓl�𓾂� �^����ꂽ�E�Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo��
-		// �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+
 		int right_value = 0;
 		if (hm.containsKey(right))
 			right_value = hm.get(right).intValue();
@@ -498,7 +498,23 @@ class EXPR implements Command {
 				Log.d("EXPR", "Unrecognized variable at right: " + right);
 			}
 		}
-		// �w�肳�ꂽ�Z�p���Z�ɑΉ����鉉�Z���s��
+
+		// 両辺が変数名ではなく数字の直接入力だった場合
+		if (left_value == 0) {
+			try {
+				left_value = Integer.parseInt(left);
+			} catch (NumberFormatException oops) {
+				Log.d("EXPR", "Unrecognized variable at left: " + left);
+			}
+		}
+		if (right_value == 0) {
+			try {
+				right_value = Integer.parseInt(right);
+			} catch (NumberFormatException oops) {
+				Log.d("EXPR", "Unrecognized variable at right: " + right);
+			}
+		}
+
 		int value = 0;
 		if (operation.equals(ArithOperation.ADD))
 			value = left_value + right_value;

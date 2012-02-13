@@ -72,10 +72,11 @@ public class MainActivity extends Activity implements Runnable {
 	static SQLiteDatabase mydb; // 矢印の情報保持用
 	static int fromWidgetId = 0;
 	static int ifFlag = 0; // True == 1, false == -1, null == 0
-	static float from_x = 50;
+	static float from_x = 0;
+	static float to_x = 0;
 	static float from_y = 0;
 	static float to_y = 0;
-
+	
 	int paramsHeigh = 90; // 命令ラベルと命令ラベルの間
 	private final int WC = ViewGroup.LayoutParams.WRAP_CONTENT; // Layout用のパラメータ
 
@@ -402,12 +403,15 @@ public class MainActivity extends Activity implements Runnable {
 						break;
 					case DragEvent.ACTION_DROP: {
 						Log.i("mtvA", "---Drop---");
-						to_y = mtvA.getTop();
-						arrow.setFromToPoint(from_x, from_y, to_y);
+						/* 矢印関係の処理 */
+						to_x = mtvA.getLeft() + 50;	to_y = mtvA.getTop();
+						arrow.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrow.setId(arrowId);
 						arrowId++;
 						layout.addView(arrow);
-
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrow.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -417,15 +421,6 @@ public class MainActivity extends Activity implements Runnable {
 							ifFlag = 0;
 						}
 						mydb.insert("CommandConnection", null, values);
-
-						/*
-						 * Cursor cursor = mydb.query("CommandConnection", new
-						 * String[] { "ArrowID", "FromWidgetID", "ToWidgetID" },
-						 * null, null, null, null, null);
-						 * //startManagingCursor(cursor); boolean isEof =
-						 * cursor.moveToFirst(); Log.d("drop", "fromWidgetID" +
-						 * cursor.getInt(1));
-						 */
 						result = true;
 
 						break;
@@ -453,12 +448,15 @@ public class MainActivity extends Activity implements Runnable {
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("mtvB", "---Drop---");
+						/* 矢印関係の処理 */
+						to_x = mtvB.getLeft() + 50;	to_y = mtvB.getTop();
+						arrowB.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowB.setId(arrowId);
 						arrowId++;
-
-						to_y = mtvB.getTop();
-						arrowB.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowB);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowB.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -496,12 +494,15 @@ public class MainActivity extends Activity implements Runnable {
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("mtvRR", "---Drop---");
+						/* 矢印関係の処理 */
+						to_x = mtvRR.getLeft() + 50;	to_y = mtvRR.getTop();
+						arrowRR.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowRR.setId(arrowId);
 						arrowId++;
-
-						to_y = mtvRR.getTop();
-						arrowRR.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowRR);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowRR.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -538,13 +539,15 @@ public class MainActivity extends Activity implements Runnable {
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("mtvLR", "---Drop---");
-
+						/* 矢印関係の処理 */
+						to_x = mtvLR.getLeft() + 50;	to_y = mtvLR.getTop();
+						arrowLR.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowLR.setId(arrowId);
 						arrowId++;
-
-						to_y = mtvLR.getTop();
-						arrowLR.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowLR);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowLR.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -579,11 +582,15 @@ public class MainActivity extends Activity implements Runnable {
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("waitL", "---Drop---");
+						/* 矢印関係の処理 */
+						to_x = waitL.getLeft() + 50;	to_y = waitL.getTop();
+						arrowW.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowW.setId(arrowId);
 						arrowId++;
-						to_y = waitL.getTop();
-						arrowW.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowW);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowW.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -634,12 +641,16 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("IfLabel", "---Drop---");
+						/* 矢印関係の処理 */
+						to_x = ifl.getLeft() + 50;	to_y = ifl.getTop();
+						arrowIf.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowIf.setId(arrowId);
 						arrowId++;
-						to_y = ifl.getTop();
-						arrowIf.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowIf);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowIf.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -674,12 +685,16 @@ public class MainActivity extends Activity implements Runnable {
 					boolean result = false;
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
-						Log.i("DragSample", "Drop!!");
+						Log.i("mtvS", "---Drop---");
+						/* 矢印関係の処理 */
+						to_x = mtvS.getLeft() + 50;	to_y = mtvS.getTop();
+						arrowS.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowS.setId(arrowId);
 						arrowId++;
-						to_y = mtvS.getTop();
-						arrowS.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowS);
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowS.getId());
 						values.put("FromWidgetID", fromWidgetId);
@@ -713,24 +728,17 @@ public class MainActivity extends Activity implements Runnable {
 					final int action = event.getAction();
 					boolean result = false;
 					switch (action) {
-					case DragEvent.ACTION_DRAG_STARTED: {
-					}
-						break;
-					case DragEvent.ACTION_DRAG_ENDED: {
-					}
-						break;
-					case DragEvent.ACTION_DRAG_LOCATION: {
-						result = true;
-					}
-						break;
 					case DragEvent.ACTION_DROP: {
 						Log.i("exprL", "---Drop---");
-						to_y = exprL.getTop();
-						arrowExpr.setFromToPoint(from_x, from_y, to_y);
+						/* 矢印関係の処理 */
+						to_x = exprL.getLeft() + 50;	to_y = exprL.getTop();
+						arrowExpr.setFromToPoint(from_x, to_x, from_y, to_y);
 						arrowExpr.setId(arrowId);
 						arrowId++;
 						layout.addView(arrowExpr);
-
+						from_x = 0; to_x = 0;
+						
+						/* SQLite へ挿入する準備 */
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowExpr.getId());
 						values.put("FromWidgetID", fromWidgetId);
