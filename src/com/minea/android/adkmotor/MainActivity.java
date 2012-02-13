@@ -10,6 +10,7 @@ import java.util.TimerTask;
 import java.util.Collection;
 import java.util.Iterator;
 
+import com.minea.android.adkmotor.EXPR.ArithOperation;
 import com.minea.android.adkmotor.IF.CompOperation;
 
 import android.app.Activity;
@@ -67,6 +68,7 @@ public class MainActivity extends Activity implements Runnable {
 	int arrowId;
 	HashMap<Integer, Command> commands;
 	HashMap<Integer, CommandClass> commandArray; // Widget の一覧保持
+	public HashMap<String, Integer> variables; // 変数リスト
 	static SQLiteDatabase mydb; // 矢印の情報保持用
 	static int fromWidgetId = 0;
 	static int ifFlag = 0; // True == 1, false == -1, null == 0
@@ -93,6 +95,7 @@ public class MainActivity extends Activity implements Runnable {
 		arrowId = 0;
 		timer_task = new ThreadTimer();
 		commandArray = new HashMap<Integer, CommandClass>();
+		variables = new HashMap<String, Integer>();
 	}
 
 	// コマンド追加(idは自動的に追加)
@@ -326,13 +329,15 @@ public class MainActivity extends Activity implements Runnable {
 	// アプリ -> アクセサリ
 	public void sendCommand(byte command, byte value) {
 		byte[] buffer = new byte[2];
-		/*if (value != 0x0 && value != 0x1 && value != 0x2 && value != 0x3 && value != 0x4)
-			value = 0x0;*/
+		/*
+		 * if (value != 0x0 && value != 0x1 && value != 0x2 && value != 0x3 &&
+		 * value != 0x4) value = 0x0;
+		 */
 		// 2byte のオレオレプロトコル
 		// 0x1 0x0 や 0x1 0x1
 		buffer[0] = command;
 		buffer[1] = value;
-		Log.e("sendCommand","value is "+ buffer[1]);
+		Log.e("sendCommand", "value is " + buffer[1]);
 		if (mOutputStream != null) {
 			try {
 				mOutputStream.write(buffer);
@@ -402,12 +407,12 @@ public class MainActivity extends Activity implements Runnable {
 						arrow.setId(arrowId);
 						arrowId++;
 						layout.addView(arrow);
-						
+
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrow.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvA.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -458,7 +463,7 @@ public class MainActivity extends Activity implements Runnable {
 						values.put("ArrowID", arrowB.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvB.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -501,7 +506,7 @@ public class MainActivity extends Activity implements Runnable {
 						values.put("ArrowID", arrowRR.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvRR.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -533,7 +538,7 @@ public class MainActivity extends Activity implements Runnable {
 					switch (action) {
 					case DragEvent.ACTION_DROP: {
 						Log.i("mtvLR", "---Drop---");
-						
+
 						arrowLR.setId(arrowId);
 						arrowId++;
 
@@ -544,7 +549,7 @@ public class MainActivity extends Activity implements Runnable {
 						values.put("ArrowID", arrowLR.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvLR.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -583,7 +588,7 @@ public class MainActivity extends Activity implements Runnable {
 						values.put("ArrowID", arrowW.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", waitL.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -639,7 +644,7 @@ public class MainActivity extends Activity implements Runnable {
 						values.put("ArrowID", arrowIf.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", ifl.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -652,11 +657,6 @@ public class MainActivity extends Activity implements Runnable {
 					return result;
 				}
 			});
-			/*
-			 * IF if_command = new IF(); setCommand(++current_head, if_command);
-			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
-			 * current_head);
-			 */
 			break;
 		case R.id.mStop:
 			final MultiTextLabel mtvS = new MultiTextLabel(this);
@@ -677,14 +677,14 @@ public class MainActivity extends Activity implements Runnable {
 						Log.i("DragSample", "Drop!!");
 						arrowS.setId(arrowId);
 						arrowId++;
-						arrowS.setFromToPoint(from_x, from_y, to_y);
 						to_y = mtvS.getTop();
+						arrowS.setFromToPoint(from_x, from_y, to_y);
 						layout.addView(arrowS);
 						ContentValues values = new ContentValues();
 						values.put("ArrowID", arrowS.getId());
 						values.put("FromWidgetID", fromWidgetId);
 						values.put("ToWidgetID", mtvS.getId());
-						if(ifFlag != 0){
+						if (ifFlag != 0) {
 							values.put("IfFlag", ifFlag);
 							ifFlag = 0;
 						}
@@ -699,19 +699,56 @@ public class MainActivity extends Activity implements Runnable {
 			});
 			break;
 		case R.id.mExpr:
-			ExprLabel exprL = new ExprLabel(this);
+			final ExprLabel exprL = new ExprLabel(this);
 			exprL.setId(widgetId);
-			widgetId++;
+			commandArray.put(widgetId, exprL);
 			layout.addView(exprL, createParam(paramsHeigh));
 			paramsHeigh += 90;
-			commandArray.put(widgetId, exprL);
-			/*
-			 * send_command = new SEND(); send_command.setOperation("Back");
-			 * setCommand(++current_head, send_command);
-			 * setConnection(current_head - 1, Command.ConnectionTarget.NEXT,
-			 * current_head);
-			 */
+			widgetId++;
+			
+			final ArrowDraw arrowExpr = new ArrowDraw(this);
+			/* ドラッグアンドドロップ処理 */
+			exprL.setOnDragListener(new View.OnDragListener() {
+				public boolean onDrag(View v, DragEvent event) {
+					final int action = event.getAction();
+					boolean result = false;
+					switch (action) {
+					case DragEvent.ACTION_DRAG_STARTED: {
+					}
+						break;
+					case DragEvent.ACTION_DRAG_ENDED: {
+					}
+						break;
+					case DragEvent.ACTION_DRAG_LOCATION: {
+						result = true;
+					}
+						break;
+					case DragEvent.ACTION_DROP: {
+						Log.i("exprL", "---Drop---");
+						to_y = exprL.getTop();
+						arrowExpr.setFromToPoint(from_x, from_y, to_y);
+						arrowExpr.setId(arrowId);
+						arrowId++;
+						layout.addView(arrowExpr);
 
+						ContentValues values = new ContentValues();
+						values.put("ArrowID", arrowExpr.getId());
+						values.put("FromWidgetID", fromWidgetId);
+						values.put("ToWidgetID", exprL.getId());
+						if (ifFlag != 0) {
+							values.put("IfFlag", ifFlag);
+							ifFlag = 0;
+						}
+						mydb.insert("CommandConnection", null, values);
+						result = true;
+						Log.i("exprL", "---INSERT OK---");
+
+						break;
+					}
+					}
+					return result;
+				}
+			});
 			break;
 		case R.id.itemRun:
 			// CommandArray から Commands に変換
@@ -720,36 +757,35 @@ public class MainActivity extends Activity implements Runnable {
 
 			// commandsToConnection(arrowId);
 			// Command の接続
-			Cursor c = mydb.query("CommandConnection", new String[] { "ArrowID","FromWidgetID",
-					"ToWidgetID","IfFlag"}, null, null, null, null, null);
-	         
+			Cursor c = mydb.query("CommandConnection", new String[] {
+					"ArrowID", "FromWidgetID", "ToWidgetID", "IfFlag" }, null,
+					null, null, null, null);
+
 			String text = "";
-	        boolean isEof = c.moveToFirst();
-	        while (isEof) {
-	            text = String.format("ArrowID "+ c.getInt(0) + ", FromWidgetID "+ c.getInt(1) + 
-						", ToWidgetID " + c.getInt(2) + ", IfFlag" +c.getInt(3));
-	            Log.e("SQLite",text);
-	            if (c.getInt(3) == 0) {
+			boolean isEof = c.moveToFirst();
+			while (isEof) {
+				text = String.format("ArrowID " + c.getInt(0)
+						+ ", FromWidgetID " + c.getInt(1) + ", ToWidgetID "
+						+ c.getInt(2) + ", IfFlag" + c.getInt(3));
+				Log.e("SQLite", text);
+				if (c.getInt(3) == 0) {
 					setConnection(c.getInt(1), Command.ConnectionTarget.NEXT,
 							c.getInt(2));
-					Log.e("Connection","NEXT");
+					Log.e("Connection", "NEXT");
 				} else if (c.getInt(3) == 1) {
-					setConnection(c.getInt(1), Command.ConnectionTarget.IF_TRUE,
-							c.getInt(2));
-					Log.e("Connection","IF_TRUE");
+					setConnection(c.getInt(1),
+							Command.ConnectionTarget.IF_TRUE, c.getInt(2));
+					Log.e("Connection", "IF_TRUE");
 				} else if (c.getInt(3) == -1) {
-					setConnection(c.getInt(1), Command.ConnectionTarget.IF_FALSE,
-							c.getInt(2));
-					Log.e("Connection","IF_FALSE");
+					setConnection(c.getInt(1),
+							Command.ConnectionTarget.IF_FALSE, c.getInt(2));
+					Log.e("Connection", "IF_FALSE");
 				}
-	            isEof = c.moveToNext();
-	        }
-	        c.close();
-	        //mydb.close();
-	    
-	 
+				isEof = c.moveToNext();
+			}
+			c.close();
+			// mydb.close();
 
-			
 			timer_task.setRoot(root_command);
 			timer_task.setIO(mInputStream, mOutputStream);
 			timer_task.run();
@@ -770,11 +806,9 @@ public class MainActivity extends Activity implements Runnable {
 		FileInputStream mInputStream;
 		FileOutputStream mOutputStream;
 		Command current_command;
-		HashMap<String, Integer> variables;
 
 		public ThreadTimer() {
 			current_command = new END();
-			variables = new HashMap<String, Integer>();
 		}
 
 		/*
@@ -791,7 +825,6 @@ public class MainActivity extends Activity implements Runnable {
 		void setRoot(Command c) {
 			Log.d("ThreadTimer", "ThreadTimer.setRoot");
 			current_command = c;
-			variables = new HashMap<String, Integer>();
 		}
 
 		@Override
@@ -801,10 +834,6 @@ public class MainActivity extends Activity implements Runnable {
 				Log.d("ThreadTimer", "ThreadTimer.run 1");
 				current_command = current_command.run(mInputStream,
 						mOutputStream, variables);
-				/*
-				 * Log.d("ThreadTimer", "ThreadTimer.run 2"); try {
-				 * Thread.sleep(1000); } catch (InterruptedException e) { }
-				 */
 			} while (!current_command.isEnd());
 			current_command.run(mInputStream, mOutputStream, variables);
 		}
@@ -825,67 +854,95 @@ public class MainActivity extends Activity implements Runnable {
 
 		for (int i = 1; i < lastId; i++) {
 			commandClass = commandArray.get(i);
-			if( commandClass == null){
-				Log.i("commandClass "+i,"NULL");
+			if (commandClass == null) {
+				Log.i("commandClass " + i, "NULL");
 			} else {
-			commandHm = commandClass.getAttribute();
-			Log.i("commandClass " + i, "is " + commandHm.get("MASSAGE"));
+				commandHm = commandClass.getAttribute();
+				Log.i("commandClass " + i, "is " + commandHm.get("MASSAGE"));
 
-			// 前進などのコマンド
-			if (commandHm.get("TYPE").equalsIgnoreCase("SEND")) {
-				SEND send_command = new SEND();
-				send_command.setOperation(commandHm.get("MASSAGE"));
+				// 前進などのコマンド
+				if (commandHm.get("TYPE").equalsIgnoreCase("SEND")) {
+					SEND send_command = new SEND();
+					send_command.setOperation(commandHm.get("MASSAGE"));
 
-				Log.d("set " + i, "SEND COMMND");
-				setCommand(i, send_command);
-			} else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
-				String item = "";
-				String left = "";
-				String right = "";
-				CompOperation operation = CompOperation.EQUAL;
+					Log.d("set " + i, "SEND COMMND");
+					setCommand(i, send_command);
+				} // IF
+				else if (commandHm.get("TYPE").equalsIgnoreCase("IF")) {
+					String item = "";
+					String left = "";
+					String right = "";
+					CompOperation operation = CompOperation.EQUAL;
+					IF if_command = new IF();
+					left = commandHm.get("IF_LFET_VALUE");
+					right = commandHm.get("IF_RIGHT_VALUE");
+					Log.e("IF_RIGHT_VALUE",right);
 
-				IF if_command = new IF();
+					item = commandHm.get("CONDITION");
+					if (item.equalsIgnoreCase("に等しい")) {
+						operation = CompOperation.EQUAL;
+					} else if (item.equalsIgnoreCase("に等しくない")) {
+						operation = CompOperation.NOT_EQUAL;
+					} else if (item.equalsIgnoreCase("より小さい")) {
+						operation = CompOperation.LESS_THAN;
+					} else if (item.equalsIgnoreCase("より大きい")) {
+						operation = CompOperation.MORE_THAN;
+					} else if (item.equalsIgnoreCase("以上")) {
+						operation = CompOperation.MORE_EQUAL;
+					} else if (item.equalsIgnoreCase("以下")) {
+						operation = CompOperation.LESS_EQUAL;
+					}
+					if_command.setOperation(left, operation, right);
+					setCommand(i, if_command);
+				} // WAIT
+				else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
+					String timeS = "";
+					int timeI = 0;
 
-				left = commandHm.get("IF_LFET_VALUE");
-				right = commandHm.get("IF_RIGHT_VALUE");
+					WAIT wait_command = new WAIT();
+					timeS = commandHm.get("TIME");
+					timeI = Integer.parseInt(timeS);
+					wait_command.setTime(timeI * 1000);
 
-				item = commandHm.get("CONDITION");
-				if (item.equalsIgnoreCase("に等しい")) {
-					operation = CompOperation.EQUAL;
-				} else if (item.equalsIgnoreCase("に等しくない")) {
-					operation = CompOperation.NOT_EQUAL;
-				} else if (item.equalsIgnoreCase("より小さい")) {
-					operation = CompOperation.LESS_THAN;
-				} else if (item.equalsIgnoreCase("より大きい")) {
-					operation = CompOperation.MORE_THAN;
-				} else if (item.equalsIgnoreCase("以上")) {
-					operation = CompOperation.MORE_EQUAL;
-				} else if (item.equalsIgnoreCase("以下")) {
-					operation = CompOperation.LESS_EQUAL;
+					setCommand(i, wait_command);
+				} // EXPR
+				else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
+					Log.e("SET","EXPR");
+					String item = "";
+					String left = "";
+					String right = "";
+					String value = "";
+					ArithOperation operation = ArithOperation.OR;
+
+					EXPR expr_command = new EXPR();
+
+					left = commandHm.get("EXPR_LFET_VALUE");
+					right = commandHm.get("EXPR_RIGHT_VALUE");
+					value = commandHm.get("EXPR_STORAGE");
+
+					item = commandHm.get("CONDITION");
+					if (item.equalsIgnoreCase("+")) {
+						operation = ArithOperation.ADD;
+					} else if (item.equalsIgnoreCase("-")) {
+						operation = ArithOperation.SUB;
+					} else if (item.equalsIgnoreCase("×")) {
+						operation = ArithOperation.MUL;
+					} else if (item.equalsIgnoreCase("÷")) {
+						operation = ArithOperation.DIV;
+					} else if (item.equalsIgnoreCase("%")) {
+						operation = ArithOperation.MOD;
+					} else if (item.equalsIgnoreCase("AND")) {
+						operation = ArithOperation.AND;
+					} else if (item.equalsIgnoreCase("OR")) {
+						operation = ArithOperation.OR;
+					} else if (item.equalsIgnoreCase("XOR")) {
+						operation = ArithOperation.XOR;
+					}
+					expr_command.setOperation(value, left, operation, right);
+
+					setCommand(i, expr_command);
 				}
-				if_command.setOperation(left, operation, right);
-
-				setCommand(i, if_command);
-			} else if (commandHm.get("TYPE").equalsIgnoreCase("WAIT")) {
-				String timeS = "";
-				int timeI = 0;
-
-				WAIT wait_command = new WAIT();
-				timeS = commandHm.get("TIME");
-				timeI = Integer.parseInt(timeS);
-				wait_command.setTime(timeI * 1000);
-
-				setCommand(i, wait_command);
-			} else if (commandHm.get("TYPE").equalsIgnoreCase("EXPR")) {
-				String timeS = "";
-				int timeI = 0;
-
-				EXPR expr_command = new EXPR();
-
-				timeS = commandHm.get("TIME");
-				timeI = Integer.parseInt(timeS);
-				// wait_command.setTime(timeI * 1000);
-			}}
+			}
 		}
 	}
 

@@ -58,8 +58,7 @@ class NOP implements Command {
 	}
 }
 
-
-//�������Ȃ��R�}���h
+// �������Ȃ��R�}���h
 class WAIT implements Command {
 	Command command;
 	int millis = 0;
@@ -77,10 +76,10 @@ class WAIT implements Command {
 			command = new END();
 	}
 
-	public void setTime(int times){
+	public void setTime(int times) {
 		millis = times;
 	}
-	
+
 	// �R�}���h�����s����
 	@Override
 	public Command run(FileInputStream istream, FileOutputStream ostream,
@@ -112,8 +111,8 @@ class END implements Command {
 
 	void sendCommand(FileOutputStream ostream, byte bin_command, byte value) {
 		byte[] buffer = new byte[2];
-		//if (value != 0x0 && value != 0x1 && value != 0x2)
-		//	value = 0x0;
+		// if (value != 0x0 && value != 0x1 && value != 0x2)
+		// value = 0x0;
 		// 2byte �̃I���I���v���g�R��
 		// 0x1 0x0 �� 0x1 0x1
 		buffer[0] = bin_command;
@@ -344,7 +343,8 @@ class IF implements Command {
 	public Command run(FileInputStream istream, FileOutputStream ostream,
 			HashMap<String, Integer> hm) {
 		Log.d("Command", "IF.run");
-		// ���Ӓl�𓾂� �^����ꂽ���Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo�� �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+
+		// 変数だった場合
 		int left_value = 0;
 		if (hm.containsKey(left))
 			left_value = hm.get(left).intValue();
@@ -356,7 +356,7 @@ class IF implements Command {
 				Log.d("IF", "Unrecognized variable at left: " + left);
 			}
 		}
-		// �E�Ӓl�𓾂� �^����ꂽ�E�Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo�� �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+
 		int right_value = 0;
 		if (hm.containsKey(right))
 			right_value = hm.get(right).intValue();
@@ -368,27 +368,52 @@ class IF implements Command {
 				Log.d("IF", "Unrecognized variable at right: " + right);
 			}
 		}
-		// �w�肳�ꂽ��r���Z�ɑΉ����鉉�Z���s���A�^��������ifTrue��Ԃ�
-		if (operation == CompOperation.EQUAL && left_value == right_value)
+
+		if (left_value == 0) {
+			try {
+				left_value = Integer.parseInt(left);
+			} catch (NumberFormatException oops) {
+				Log.d("IF", "Unrecognized variable at left: " + left);
+			}
+		} else if (right_value == 0) {
+			try {
+				right_value = Integer.parseInt(right);
+			} catch (NumberFormatException oops) {
+				Log.d("IF", "Unrecognized variable at right: " + right);
+			}
+		}
+
+		Log.d("IF", "right: " + right_value + ", left: " + left_value);
+
+		if (operation.equals(CompOperation.EQUAL)
+				&& (left_value == right_value)) {
+			Log.d("IF", "EQUAL");
 			return ifTrue;
-		else if (operation == CompOperation.NOT_EQUAL
-				&& left_value != right_value)
+		} else if (operation.equals(CompOperation.NOT_EQUAL)
+				&& (left_value != right_value)) {
+			Log.d("IF", "NOT_EQUAL");
 			return ifTrue;
-		else if (operation == CompOperation.LESS_THAN
-				&& left_value < right_value)
+		} else if (operation.equals(CompOperation.LESS_THAN)
+				&& (left_value < right_value)) {
+			Log.d("IF", "LESS_THAN");
 			return ifTrue;
-		else if (operation == CompOperation.MORE_THAN
-				&& left_value > right_value)
+		} else if (operation.equals(CompOperation.MORE_THAN)
+				&& (left_value > right_value)) {
+			Log.d("IF", "MORE_THAN");
 			return ifTrue;
-		else if (operation == CompOperation.LESS_EQUAL
-				&& left_value <= right_value)
+		} else if (operation.equals(CompOperation.LESS_EQUAL)
+				&& (left_value <= right_value)) {
+			Log.d("IF", "LESS_EQUAL");
 			return ifTrue;
-		else if (operation == CompOperation.MORE_EQUAL
-				&& left_value >= right_value)
+		} else if (operation.equals(CompOperation.MORE_EQUAL)
+				&& (left_value >= right_value)) {
+			Log.d("IF", "MORE_EQUAL");
 			return ifTrue;
-		// �U��������ifFalse��Ԃ�
-		else
+			// �U��������ifFalse��Ԃ�
+		} else {
+			Log.d("IF", "IfFalse");
 			return ifFalse;
+		}
 	}
 
 	@Override
@@ -424,7 +449,7 @@ class EXPR implements Command {
 	@Override
 	public void setNext(ConnectionTarget target, Command c) {
 		Log.d("Command", "EXPR.setNext");
-		if (target == ConnectionTarget.IF_TRUE)
+		if (target == ConnectionTarget.NEXT)
 			command = c;
 	}
 
@@ -436,7 +461,7 @@ class EXPR implements Command {
 	// �Z�p���Z�̎�ނƌv�Z�Ɏg���ϐ��Ƒ���̕ϐ����w�肷��
 	void setOperation(String _storage, String _left, ArithOperation _operation,
 			String _right) {
-		Log.d("Command", "EXPR.setNext");
+		Log.d("Command", "EXPR.setOperation");
 		storage = _storage;
 		left = _left;
 		operation = _operation;
@@ -447,7 +472,8 @@ class EXPR implements Command {
 	public Command run(FileInputStream istream, FileOutputStream ostream,
 			HashMap<String, Integer> hm) {
 		Log.d("Command", "EXPR.run");
-		// ���Ӓl�𓾂� �^����ꂽ���Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo�� �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+		// ���Ӓl�𓾂� �^����ꂽ���Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo��
+		// �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
 		int left_value = 0;
 		if (hm.containsKey(left))
 			left_value = hm.get(left).intValue();
@@ -459,7 +485,8 @@ class EXPR implements Command {
 				Log.d("EXPR", "Unrecognized variable at left: " + left);
 			}
 		}
-		// �E�Ӓl�𓾂� �^����ꂽ�E�Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo�� �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
+		// �E�Ӓl�𓾂� �^����ꂽ�E�Ӓl�̖��O���ϐ��Ɋ�ɂ������ꍇ�͂��̒l��ǂݏo��
+		// �Ȃ������ꍇ�͂��̕�����𐮐��l�Ƃ��Ďg�����Ƃ����݂�
 		int right_value = 0;
 		if (hm.containsKey(right))
 			right_value = hm.get(right).intValue();
@@ -473,21 +500,21 @@ class EXPR implements Command {
 		}
 		// �w�肳�ꂽ�Z�p���Z�ɑΉ����鉉�Z���s��
 		int value = 0;
-		if (operation == ArithOperation.ADD)
+		if (operation.equals(ArithOperation.ADD))
 			value = left_value + right_value;
-		else if (operation == ArithOperation.SUB)
+		else if (operation.equals(ArithOperation.SUB))
 			value = left_value - right_value;
-		else if (operation == ArithOperation.MUL)
+		else if (operation.equals(ArithOperation.MUL))
 			value = left_value * right_value;
-		else if (operation == ArithOperation.DIV)
+		else if (operation.equals(ArithOperation.DIV))
 			value = left_value / right_value;
-		else if (operation == ArithOperation.MOD)
+		else if (operation.equals(ArithOperation.MOD))
 			value = left_value % right_value;
-		else if (operation == ArithOperation.AND)
+		else if (operation.equals(ArithOperation.AND))
 			value = left_value & right_value;
-		else if (operation == ArithOperation.OR)
+		else if (operation.equals(ArithOperation.OR))
 			value = left_value | right_value;
-		else if (operation == ArithOperation.XOR)
+		else if (operation.equals(ArithOperation.XOR))
 			value = left_value ^ right_value;
 		else
 			Log.d("EXPR", "Unrecognized operation was requested");

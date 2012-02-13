@@ -29,8 +29,10 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.RelativeLayout.LayoutParams;
 
 interface CommandClass {
 	public void setAttribute(String name, String attri);
@@ -552,7 +554,7 @@ class WaitLabel extends LinearLayout implements CommandClass {
 
 
 class ExprLabel extends LinearLayout implements CommandClass {
-	EditText ed0, ed1;
+	EditText ed0, ed1, answer;
 	SpannableStringBuilder sb; // getText用
 	String item; // Spinner のテキスト取得用
 	HashMap<String, String> commandHm;
@@ -583,6 +585,39 @@ class ExprLabel extends LinearLayout implements CommandClass {
 		setOrientation(HORIZONTAL);
 		setBackgroundColor(Color.LTGRAY);
 		setAttribute("TYPE", "EXPR");
+		
+		answer = new EditText(context);
+		answer.setTextColor(Color.BLACK);
+		answer.setBackgroundColor(Color.LTGRAY);
+		answer.setWidth(120);
+
+		answer.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before,
+					int count) {
+			}
+
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count,
+					int after) {
+			}
+
+			@Override
+			public void afterTextChanged(Editable edit) {
+				String s = edit.toString();
+				setAttribute("EXPR_LFET_VALUE", s);
+			}
+		});
+
+		addView(answer);
+		
+		TextView tx0 = new TextView(context);
+		tx0.setTextColor(Color.BLACK);
+		tx0.setBackgroundColor(Color.LTGRAY);
+		tx0.setWidth(15);
+		tx0.setText("=");
+		addView(tx0);
+		
 		ed0 = new EditText(context);
 		ed0.setTextColor(Color.BLACK);
 		ed0.setBackgroundColor(Color.LTGRAY);
@@ -602,7 +637,7 @@ class ExprLabel extends LinearLayout implements CommandClass {
 			@Override
 			public void afterTextChanged(Editable edit) {
 				String s = edit.toString();
-				setAttribute("IF_LFET_VALUE", s);
+				setAttribute("EXPR_STORAGE", s);
 			}
 		});
 
@@ -614,12 +649,14 @@ class ExprLabel extends LinearLayout implements CommandClass {
 
 		// List の作成
 		ArrayList<String> list = new ArrayList<String>();
-		list.add("==");
-		list.add("=");
-		list.add("-");
 		list.add("+");
+		list.add("-");
 		list.add("×");
 		list.add("÷");
+		list.add("%");
+		list.add("AND");
+		list.add("OR");
+		list.add("XOR");
 
 		// Adapterの作成
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(context,
@@ -645,7 +682,7 @@ class ExprLabel extends LinearLayout implements CommandClass {
 		ed1 = new EditText(context);
 		ed1.setTextColor(Color.BLACK);
 		ed1.setBackgroundColor(Color.LTGRAY);
-		ed1.setWidth(120);
+		ed1.setWidth(80);
 
 		ed1.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -661,7 +698,7 @@ class ExprLabel extends LinearLayout implements CommandClass {
 			@Override
 			public void afterTextChanged(Editable edit) {
 				String s = edit.toString();
-				setAttribute("IF_RIGHT_VALUE", s);
+				setAttribute("EXPR_RIGHT_VALUE", s);
 			}
 		});
 
@@ -737,10 +774,21 @@ class ArrowDraw extends View {
 		pathPaint.setStrokeWidth(4);
 		pathPaint.setColor(Color.BLACK);
 		pathPaint.setAntiAlias(true);
+		pathPaint.setAntiAlias(true);
 		Path mPath = new Path();
 		
-		Log.i("Arrow","from_x "+from_x+", from_y "+from_x+", to_y "+to_y);
+		//Log.i("Arrow","from_x "+from_x+", from_y "+from_x+", to_y "+to_y);
 
+		if(from_y > to_y){
+			mPath.moveTo(from_x, to_y);
+			mPath.lineTo(from_x, from_y);
+			mPath.lineTo(from_x - 8, from_y + 5);
+			mPath.lineTo(from_x, from_y);
+			mPath.lineTo(from_x + 8, from_y + 5);
+			mPath.lineTo(from_x, from_y);
+			canvas.drawPath(mPath, pathPaint);
+			
+		} else{
 		mPath.moveTo(from_x, from_y);
 		mPath.lineTo(from_x, to_y);
 		mPath.lineTo(from_x - 8, to_y - 5);
@@ -748,6 +796,7 @@ class ArrowDraw extends View {
 		mPath.lineTo(from_x + 8, to_y - 5);
 		mPath.lineTo(from_x, to_y);
 		canvas.drawPath(mPath, pathPaint);
+		}
 	}
 
 	/*
